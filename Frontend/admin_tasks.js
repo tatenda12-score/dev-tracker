@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", function () {
     async function loadTasks() {
 
         const response = await fetch(
-            `http://127.0.0.1:8000/tasks/user/${userId}`,
+            `https://dev-tracker-yfvj.onrender.com/tasks/user/${userId}`,
             {
                 headers: {
                     "Authorization": `Bearer ${token}`
@@ -94,7 +94,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const hours = document.getElementById("hours").value;
         const github = document.getElementById("github_link").value;
 
-       await fetch("http://127.0.0.1:8000/assign-task", {
+       await fetch("https://dev-tracker-yfvj.onrender.com/assign-task", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

@@ -110,7 +110,7 @@ async function loadNotifications(){
     const token = localStorage.getItem("token");
 
     const res = await fetch(
-    "http://127.0.0.1:8000/tasks/notifications",
+    "https://dev-tracker-yfvj.onrender.com/tasks/notifications",
     {
         headers:{
             "Authorization":`Bearer ${token}`

@@ -1,4 +1,4 @@
-const BASE_URL = "http://127.0.0.1:8000";
+const BASE_URL = "https://dev-tracker-yfvj.onrender.com";
 
 async function apiRequest(endpoint, method="GET", data=null) {
 

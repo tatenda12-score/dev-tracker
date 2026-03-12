@@ -7,7 +7,7 @@ let selectedUserEmail = null;
 // LOAD USERS BOARD
 async function loadBoard(){
 
-    const response = await fetch("http://127.0.0.1:8000/users/", {
+    const response = await fetch("https://dev-tracker-yfvj.onrender.com/users/", {
         headers:{
             "Authorization": `Bearer ${token}`
         }
@@ -46,7 +46,7 @@ async function loadBoard(){
 // GET CURRENT ADMIN
 async function getCurrentUser(){
 
-    const response = await fetch("http://127.0.0.1:8000/auth/me", {
+    const response = await fetch("https://dev-tracker-yfvj.onrender.com/auth/me", {
         headers:{
             "Authorization": `Bearer ${token}`
         }
@@ -70,7 +70,7 @@ async function loadUserTasks(userId, email){
     document.getElementById("taskUserTitle").innerText =
         "Tasks for " + email;
 
-    const response = await fetch(`http://127.0.0.1:8000/tasks/user/${userId}`,{
+    const response = await fetch(`https://dev-tracker-yfvj.onrender.com/tasks/user/${userId}`,{
         headers:{
             "Authorization": `Bearer ${token}`
         }
@@ -104,7 +104,7 @@ async function assignTask(){
         return;
     }
 
-    await fetch("http://127.0.0.1:8000/tasks/assign-task",{
+    await fetch("https://dev-tracker-yfvj.onrender.com/tasks/assign-task",{
         method:"POST",
         headers:{
             "Content-Type":"application/json",
