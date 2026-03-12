@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<style>
+
+body{
+font-family: Arial, sans-serif;
+background:#eef2f7;
+padding:40px;
+margin:0;
+}
+
+.page{
+max-width:900px;
+margin:auto;
+}
+
+.panel{
+background:white;
+padding:25px;
+border-radius:10px;
+box-shadow:0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* task cards */
+.task-card{
+background:#fafafa;
+border:1px solid #ddd;
+padding:15px;
+margin-bottom:15px;
+border-radius:8px;
+}
+
+.task-card h3{
+margin:0;
+color:#2c3e50;
+}
+
+.task-card p{
+margin:6px 0;
+}
+
+/* form styling */
+input{
+width:100%;
+padding:10px;
+margin-bottom:10px;
+border-radius:6px;
+border:1px solid #ccc;
+}
+
+button{
+padding:10px 15px;
+border:none;
+background:#007bff;
+color:white;
+border-radius:6px;
+cursor:pointer;
+}
+
+button:hover{
+background:#0056b3;
+}
+/* Modal background */
+.modal{
+display:none;
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.4);
+justify-content:center;
+align-items:center;
+}
+
+/* Modal box */
+.modal-content{
+background:white;
+padding:30px;
+border-radius:10px;
+width:400px;
+box-shadow:0 5px 20px rgba(0,0,0,0.2);
+}
+
+.close{
+position:absolute;
+top:15px;
+right:20px;
+font-size:24px;
+cursor:pointer;
+color:#444;
+}
+
+.close:hover{
+color:black;
+}
+
+.modal-content{
+position:relative;
+background:white;
+padding:30px;
+border-radius:10px;
+width:450px;
+box-shadow:0 5px 20px rgba(0,0,0,0.2);
+}
+
+.form-buttons{
+display:flex;
+gap:10px;
+margin-top:10px;
+}
+
+.cancel-btn{
+background:#ccc;
+color:black;
+}
+
+.cancel-btn:hover{
+background:#bbb;
+}
+
+.header-row{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:20px;
+}
+
+</style>
+
+<div class="header-row">
+
+<h1 id="taskUserTitle"></h1>
+
+<button id="showFormBtn">Assign Task</button>
+
+</div>
+
+<div class="panel">
+
+<h2>Tasks</h2>
+
+<div id="tasks" class="task-list"></div>
+
+<!-- MODAL -->
+<div id="taskFormContainer" class="modal" style="display:none;">
+
+<span id="closeModal" class="close">&times;</span>
+
+<h2>Assign Task</h2>
+
+<form id="taskForm">
+
+<input id="title" placeholder="Task title" required>
+
+<input id="description" placeholder="Description" required>
+
+<input id="hours" type="number" placeholder="Hours spent" required>
+
+<input id="github_link" placeholder="GitHub link">
+
+<div class="form-buttons">
+
+<button type="submit">Assign Task</button>
+
+<button type="button" id="closeModalBtn" class="cancel-btn">Cancel</button>
+
+</div>
+
+</form>
+
+</div>
+
+</div>
+
+<script src="admin_tasks.js"></script>

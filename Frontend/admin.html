@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<title>Admin Panel</title>
+
+<link rel="stylesheet" href="styles.css">
+
+<style>
+
+/* Admin header panel */
+.admin-header{
+    width:90%;
+    margin:30px auto;
+    background:white;
+    padding:25px;
+    border-radius:12px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.1);
+}
+
+/* Header layout */
+.admin-header h1{
+    margin-bottom:10px;
+}
+
+/* Tasks board panel */
+.tasks-board{
+    width:90%;
+    margin:30px auto;
+}
+
+/* Title */
+.tasks-board h2{
+    text-align:center;
+    margin-bottom:30px;
+}
+
+/* Users grid */
+#usersContainer{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+    gap:30px;
+}
+
+/* User card */
+.userColumn{
+    background:white;
+    padding:20px;
+    border-radius:12px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.1);
+}
+
+</style>
+
+</head>
+
+<body>
+
+<!-- TOP ADMIN PANEL -->
+<div class="admin-header">
+
+    <div>
+        <h1>Admin Panel</h1>
+        <p id="adminName">Logged in as: admin1@gmail.com</p>
+    </div>
+
+    <button onclick="logout()">Logout</button>
+
+</div>
+
+
+<!-- TASK BOARD -->
+<div class="tasks-board">
+
+    <h2 class="users-title">USERS</h2>
+
+    <div id="usersContainer"></div>
+    <div id="taskPanel" style="display:none; margin-top:40px;">
+
+    <h2 id="taskUserTitle"></h2>
+
+    <div id="taskList"></div>
+
+    <h3>Assign Task</h3>
+
+    <input id="taskTitle" placeholder="Task title">
+
+    <button onclick="assignTask()">Assign Task</button>
+
+</div>
+
+</div>
+
+<script src="admin.js"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="user-panel">
+
+    <div class="user-info">
+        <span id="userInfo"></span>
+    </div>
+
+    <button class="logout-btn" onclick="logout()">Logout</button>
+
+</div>
+
+    <div class="container">
+        <div class="top-bar">
+    <div class="brand">
+        <h2>My Dashboard</h2>
+        <h3 class="company-name">Blitztech Electronics</h3>
+    </div>
+
+</div>
+        <div id="notifications"></div>
+
+         <h3>Create Task</h3>
+        <form id="taskForm">
+            <input type="text" id="title" placeholder="Task Title" required>
+            <input type="text" id="description" placeholder="Description" required>
+            <input type="number" id="hours" placeholder="Hours Spent" required>
+            <input type="text" id="github_link" placeholder="GitHub Link (optional)">
+            <button type="submit">Add Task</button>
+        </form>
+
+        <h3>My Tasks</h3>
+        <div id="tasks"></div>
+    </div>
+
+<script src="api.js"></script>
+<script src="dashboard.js"></script>
+</body>
+</html>

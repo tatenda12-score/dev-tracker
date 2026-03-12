@@ -1,0 +1,202 @@
+body{
+    margin:0;
+    padding:0;
+    font-family:Arial, sans-serif;
+
+    min-height:100vh;
+    overflow-y:auto;
+
+    background-image:url("images/logo.jpg");
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
+
+    position:relative;
+}
+
+/* Blur overlay */
+body::before{
+    content:"";
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    backdrop-filter:blur(8px);
+    z-index:-1;
+}
+
+/* Login container */
+.container{
+    background:white;
+    padding:30px;
+    width:350px;
+    border-radius:8px;
+    box-shadow:0 0 10px rgba(0,0,0,0.1);
+
+    margin:40px auto;
+}
+
+/* Inputs */
+input{
+    width:100%;
+    padding:10px;
+    margin:8px 0;
+}
+
+/* Buttons */
+button{
+    width:100%;
+    padding:10px;
+    background:#2563eb;
+    color:white;
+    border:none;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#1e4fc1;
+}
+
+h3{
+    margin-top:20px;
+}
+
+/* Tasks */
+.task-card{
+    border:1px solid #ddd;
+    padding:12px;
+    margin-bottom:12px;
+    border-radius:8px;
+    background:#f9f9f9;
+}
+
+.task-header{
+    display:flex;
+    justify-content:space-between;
+    font-weight:bold;
+}
+
+.task-footer{
+    display:flex;
+    justify-content:space-between;
+    margin-top:6px;
+    font-size:14px;
+    color:#555;
+}
+
+/* Admin header */
+.admin-header{
+    width:800px;
+    max-width:90%;
+    margin:40px auto;
+    padding:30px 40px;
+
+    background:#f1f1f1;
+    border-radius:15px;
+
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+.admin-header button{
+    margin-top:15px;
+    width:200px;
+}
+
+/* USERS title */
+.users-title{
+    text-align:center;
+    margin-top:60px;
+    margin-bottom:30px;
+    font-size:28px;
+    letter-spacing:2px;
+}
+
+/* Users container */
+#usersContainer{
+    display:flex;
+    justify-content:center;
+    gap:40px;
+    flex-wrap:wrap;
+
+    width:100%;
+    max-width:1100px;
+    margin:0 auto;
+}
+
+/* User cards */
+.userColumn{
+    width:250px;
+    background:white;
+    padding:20px;
+    border-radius:12px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.15);
+}
+
+/* Modal */
+.modal{
+    display:none;
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.6);
+}
+
+.modal-content{
+    background:white;
+    padding:30px;
+    width:400px;
+    margin:150px auto;
+    border-radius:10px;
+}
+
+/* Notifications */
+#notifications{
+    margin-bottom:20px;
+}
+
+.notification{
+    background:#fff3cd;
+    border-left:5px solid #ffc107;
+    padding:12px;
+    margin-bottom:10px;
+    border-radius:6px;
+    font-size:14px;
+}
+
+/* User panel */
+.user-panel{
+    position:absolute;
+    top:20px;
+    left:20px;
+
+    display:flex;
+    align-items:center;
+    gap:20px;
+
+    background:#0b3d75;
+    color:white;
+
+    padding:10px 20px;
+    border-radius:10px;
+
+    box-shadow:0 4px 10px rgba(0,0,0,0.2);
+}
+
+/* Logout button */
+.logout-btn{
+    background:#3b6ee8;
+    color:white;
+    border:none;
+    padding:8px 16px;
+    border-radius:6px;
+    cursor:pointer;
+    font-size:14px;
+}
+
+.logout-btn:hover{
+    background:#2953b8;
+}
