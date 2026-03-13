@@ -37,10 +37,10 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 # =========================
 
 def hash_password(password: str):
-    return pwd_context.hash(password[:72])
+    return pwd_context.hash(str(password))
 
 def verify_password(plain_password, password_hash):
-    return pwd_context.verify(plain_password[:72], password_hash)
+    return pwd_context.verify(str(plain_password), password_hash)
 
 # =========================
 # JWT Token creation
