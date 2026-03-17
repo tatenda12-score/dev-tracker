@@ -35,22 +35,27 @@ def get_my_tasks(
 # GET TASKS FOR USER (ADMIN)
 # ==========================
 @router.get("/user/{user_id}")
-def get_tasks_for_user(
-    user_id: int,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
-):
-    if current_user.role != "ADMIN":
-        raise HTTPException(status_code=403, detail="Admin only")
+def get_tasks_for_user(user_id: int, db: Session = Depends(get_db)):
 
-    tasks = db.query(models.Task)\
-        .filter(models.Task.owner_id == user_id)\
-        .order_by(models.Task.id.desc())\
-        .all()
+    tasks = db.query(Task).filter(
+        Task.owner_id == user_id
+    ).all()
 
     return {
         "success": True,
-        "data": tasks
+        "data": [
+            {
+                "id": t.id,
+                "title": t.title,
+                "description": t.description,
+                "status": t.status,
+                "created_at": t.created_at,
+                "start_time": t.start_time,
+                "end_time": t.end_time,
+                "time_taken": t.time_taken
+            }
+            for t in tasks
+        ]
     }
 
 

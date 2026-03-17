@@ -33,6 +33,8 @@ class Task(Base):
     assigned_by_id = Column(Integer, ForeignKey("users.id"))
 
     status = Column(String, default="Pending")  # ✅ IMPORTANT
+    
+    created_at = Column(DateTime, default=datetime.utcnow) 
 
     start_time = Column(DateTime, nullable=True)
     end_time = Column(DateTime, nullable=True)
