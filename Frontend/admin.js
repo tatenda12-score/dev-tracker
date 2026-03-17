@@ -4,7 +4,9 @@ let selectedUserId = null;
 let selectedUserEmail = null;
 
 
-// LOAD USERS
+// ==========================
+// LOAD KPI DASHBOARD
+// ==========================
 async function loadBoard(){
 
     const response = await fetch("https://dev-tracker-yfvj.onrender.com/users/", {
@@ -13,29 +15,71 @@ async function loadBoard(){
 
     const result = await response.json();
 
-    const users = result.data.items || result.data || [];
+    const users = result.data?.items || result.data || [];
 
     const container = document.getElementById("usersContainer");
     container.innerHTML = "";
 
-    users.filter(u => u.role !== "ADMIN").forEach(user => {
+    for (const user of users) {
 
+        if (user.role === "ADMIN") continue;
+
+        // GET USER TASKS
+        const res = await fetch(
+            `https://dev-tracker-yfvj.onrender.com/tasks/user/${user.id}`, {
+            headers:{ "Authorization": `Bearer ${token}` }
+        });
+
+        const taskData = await res.json();
+        const tasks = taskData.data || [];
+
+        // ================= KPI CALCULATIONS =================
+        const totalTasks = tasks.length;
+
+        const completedTasks = tasks.filter(
+            t => t.status === "Completed"
+        );
+
+        const completedCount = completedTasks.length;
+
+        // Average time (seconds → minutes)
+        let avgTime = 0;
+
+        if (completedCount > 0) {
+            const totalTime = completedTasks.reduce(
+                (sum, t) => sum + (t.time_taken || 0),
+                0
+            );
+
+            avgTime = (totalTime / completedCount) / 60;
+        }
+
+        const performance = totalTasks > 0
+            ? Math.round((completedCount / totalTasks) * 100)
+            : 0;
+
+        // ================= UI =================
         const card = document.createElement("div");
         card.className = "userColumn";
 
         card.innerHTML = `
             <h3>${user.email}</h3>
-            <p>${user.role}</p>
+            <p>✔ Completed: ${completedCount}</p>
+            <p>⏱ Avg Time: ${avgTime.toFixed(2)} min</p>
+            <p>📊 Performance: ${performance}%</p>
+            <button onclick="loadUserTasks(${user.id}, '${user.email}')">
+                Manage Tasks
+            </button>
         `;
 
-        card.onclick = () => loadUserTasks(user.id, user.email);
-
         container.appendChild(card);
-    });
+    }
 }
 
 
-// LOAD USER TASKS
+// ==========================
+// LOAD USER TASKS (DETAIL PANEL)
+// ==========================
 async function loadUserTasks(userId, email){
 
     selectedUserId = userId;
@@ -68,7 +112,9 @@ async function loadUserTasks(userId, email){
 }
 
 
+// ==========================
 // ASSIGN TASK
+// ==========================
 async function assignTask(){
 
     const title = document.getElementById("taskTitle").value;
@@ -97,6 +143,8 @@ async function assignTask(){
     const data = await response.json();
     console.log("Assign:", data);
 
+    alert("Task assigned successfully");
+
     loadUserTasks(selectedUserId, selectedUserEmail);
 
     document.getElementById("taskTitle").value = "";
@@ -104,7 +152,9 @@ async function assignTask(){
 }
 
 
+// ==========================
 // ADMIN NAME
+// ==========================
 async function getCurrentUser(){
 
     const response = await fetch("https://dev-tracker-yfvj.onrender.com/auth/me", {
@@ -118,13 +168,17 @@ async function getCurrentUser(){
 }
 
 
+// ==========================
 // LOGOUT
+// ==========================
 function logout(){
     localStorage.clear();
     window.location.href = "login.html";
 }
 
 
+// ==========================
 // START
+// ==========================
 loadBoard();
 getCurrentUser();
