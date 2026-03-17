@@ -6,40 +6,40 @@
 </head>
 
 <body>
+
+    <!-- USER PANEL -->
     <div class="user-panel">
+        <div class="user-info">
+            <span id="userInfo"></span>
+        </div>
 
-    <div class="user-info">
-        <span id="userInfo"></span>
+        <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
 
-    <button class="logout-btn" onclick="logout()">Logout</button>
-
-</div>
-
+    <!-- MAIN CONTAINER -->
     <div class="container">
-        <div class="top-bar">
-    <div class="brand">
-        <h2>My Dashboard</h2>
-        <h3 class="company-name">Blitztech Electronics</h3>
-    </div>
 
-</div>
+        <!-- TOP BAR -->
+        <div class="top-bar">
+            <div class="brand">
+                <h2>My Dashboard</h2>
+                <h3 class="company-name">Blitztech Electronics</h3>
+            </div>
+        </div>
+
+        <!-- NOTIFICATIONS (TASKS FROM ADMIN) -->
+        <h3>Notifications</h3>
         <div id="notifications"></div>
 
-         <h3>Create Task</h3>
-        <form id="taskForm">
-            <input type="text" id="title" placeholder="Task Title" required>
-            <input type="text" id="description" placeholder="Description" required>
-            <input type="number" id="hours" placeholder="Hours Spent" required>
-            <input type="text" id="github_link" placeholder="GitHub Link (optional)">
-            <button type="submit">Add Task</button>
-        </form>
-
+        <!-- ACTIVE TASKS -->
         <h3>My Tasks</h3>
         <div id="tasks"></div>
+
     </div>
 
-<script src="api.js"></script>
-<script src="dashboard.js"></script>
+    <!-- SCRIPTS -->
+    <script src="api.js"></script>
+    <script src="dashboard.js"></script>
+
 </body>
 </html>

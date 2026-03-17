@@ -23,8 +23,11 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
         return;
     }
 
-    // save token
+    // ✅ SAVE EVERYTHING
     localStorage.setItem("token", data.access_token);
+    localStorage.setItem("userId", data.user.id);
+    localStorage.setItem("role", data.user.role);
+    localStorage.setItem("email", data.user.email);
 
     // redirect
     if (data.user.role === "ADMIN") {

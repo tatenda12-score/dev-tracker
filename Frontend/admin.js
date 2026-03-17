@@ -4,25 +4,21 @@ let selectedUserId = null;
 let selectedUserEmail = null;
 
 
-// LOAD USERS BOARD
+// LOAD USERS
 async function loadBoard(){
 
     const response = await fetch("https://dev-tracker-yfvj.onrender.com/users/", {
-        headers:{
-            "Authorization": `Bearer ${token}`
-        }
+        headers:{ "Authorization": `Bearer ${token}` }
     });
 
     const result = await response.json();
 
-    const users = result.data.items
-        ? result.data.items.filter(user => user.role !== "ADMIN")
-        : result.data.filter(user => user.role !== "ADMIN");
+    const users = result.data.items || result.data || [];
 
     const container = document.getElementById("usersContainer");
     container.innerHTML = "";
 
-    users.forEach(user => {
+    users.filter(u => u.role !== "ADMIN").forEach(user => {
 
         const card = document.createElement("div");
         card.className = "userColumn";
@@ -32,30 +28,10 @@ async function loadBoard(){
             <p>${user.role}</p>
         `;
 
-        // open tasks page
-        card.onclick = () => {
-            window.location.href =
-            `admin_tasks.html?userId=${user.id}&name=${user.name}`;
-        };
+        card.onclick = () => loadUserTasks(user.id, user.email);
 
         container.appendChild(card);
     });
-}
-
-
-// GET CURRENT ADMIN
-async function getCurrentUser(){
-
-    const response = await fetch("https://dev-tracker-yfvj.onrender.com/auth/me", {
-        headers:{
-            "Authorization": `Bearer ${token}`
-        }
-    });
-
-    const user = await response.json();
-
-    document.getElementById("adminName").innerText =
-        "Logged in as: " + user.name;
 }
 
 
@@ -66,75 +42,89 @@ async function loadUserTasks(userId, email){
     selectedUserEmail = email;
 
     document.getElementById("taskPanel").style.display = "block";
+    document.getElementById("taskUserTitle").innerText = "Tasks for " + email;
 
-    document.getElementById("taskUserTitle").innerText =
-        "Tasks for " + email;
-
-    const response = await fetch(`https://dev-tracker-yfvj.onrender.com/tasks/user/${userId}`,{
-        headers:{
-            "Authorization": `Bearer ${token}`
-        }
+    const response = await fetch(
+        `https://dev-tracker-yfvj.onrender.com/tasks/user/${userId}`, {
+        headers:{ "Authorization": `Bearer ${token}` }
     });
 
     const result = await response.json();
 
-    const taskList = document.getElementById("taskList");
+    const tasks = result.data || [];
 
+    const taskList = document.getElementById("taskList");
     taskList.innerHTML = "";
 
-    result.data.forEach(task =>{
-
-        const div = document.createElement("div");
-        div.innerText = task.title;
-
-        taskList.appendChild(div);
-
+    tasks.forEach(task => {
+        taskList.innerHTML += `
+            <div class="task-card">
+                <h4>${task.title}</h4>
+                <p>${task.description}</p>
+                <small>Status: ${task.status}</small>
+            </div>
+        `;
     });
-
 }
 
 
-// ASSIGN TASK TO USER
+// ASSIGN TASK
 async function assignTask(){
 
     const title = document.getElementById("taskTitle").value;
+    const description = document.getElementById("taskDescription").value;
 
-    if(!title){
-        alert("Please enter a task title");
+    if(!title || !description || !selectedUserId){
+        alert("Fill all fields and select user");
         return;
     }
 
-    await fetch("https://dev-tracker-yfvj.onrender.com/tasks/assign-task",{
+    const response = await fetch(
+        "https://dev-tracker-yfvj.onrender.com/tasks/assign-task",{
         method:"POST",
         headers:{
             "Content-Type":"application/json",
             "Authorization":`Bearer ${token}`
         },
         body:JSON.stringify({
-            title:title,
-            description:"Assigned by admin",
-            owner_id:selectedUserId
+            title,
+            description,
+            owner_id:selectedUserId,
+            status:"Pending"
         })
     });
 
-    // reload tasks
+    const data = await response.json();
+    console.log("Assign:", data);
+
     loadUserTasks(selectedUserId, selectedUserEmail);
 
-    // clear input
     document.getElementById("taskTitle").value = "";
+    document.getElementById("taskDescription").value = "";
 }
-function logout() {
 
-    // remove the saved token
-    localStorage.removeItem("token");
 
-    // optional: clear everything
+// ADMIN NAME
+async function getCurrentUser(){
+
+    const response = await fetch("https://dev-tracker-yfvj.onrender.com/auth/me", {
+        headers:{ "Authorization": `Bearer ${token}` }
+    });
+
+    const user = await response.json();
+
+    document.getElementById("adminName").innerText =
+        "Logged in as: " + (user.data?.name || "Admin");
+}
+
+
+// LOGOUT
+function logout(){
     localStorage.clear();
-
-    // redirect to login page
     window.location.href = "login.html";
 }
 
-// START PAGE
+
+// START
 loadBoard();
 getCurrentUser();

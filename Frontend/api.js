@@ -20,10 +20,15 @@ async function apiRequest(endpoint, method="GET", data=null) {
     }
 
     const response = await fetch(BASE_URL + endpoint, options);
-    return response.json();
+
+    const result = await response.json();
+
+    console.log("API:", endpoint, result); // DEBUG
+
+    return result;
 }
 
 function logout() {
-    localStorage.removeItem("token");
-    window.location.href = "index.html";
+    localStorage.clear();
+    window.location.href = "login.html";
 }

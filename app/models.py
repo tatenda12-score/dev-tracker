@@ -1,10 +1,13 @@
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, Float, ForeignKey, Text
 from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
 from app.database import Base
 from datetime import datetime
-from sqlalchemy import DateTime
-from sqlalchemy import Boolean, DateTime
 
+
+# ==========================
+# USER MODEL
+# ==========================
 class User(Base):
     __tablename__ = "users"
 
@@ -15,26 +18,33 @@ class User(Base):
     role = Column(String, nullable=False)  # ADMIN or USER
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-from sqlalchemy import Text, Float, ForeignKey       
-from sqlalchemy.orm import relationship
 
-
+# ==========================
+# TASK MODEL (UPDATED)
+# ==========================
 class Task(Base):
     __tablename__ = "tasks"
       
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, nullable=False)
     description = Column(Text, nullable=True)
-    github_link = Column(String, nullable=True)
-    hours_spent = Column(Float, nullable=False)
-
-    completed_at = Column(DateTime, default=datetime.utcnow)
 
     owner_id = Column(Integer, ForeignKey("users.id"))
-    owner = relationship("User")
-    
-    
+    assigned_by_id = Column(Integer, ForeignKey("users.id"))
 
+    status = Column(String, default="Pending")  # ✅ IMPORTANT
+
+    start_time = Column(DateTime, nullable=True)
+    end_time = Column(DateTime, nullable=True)
+
+    time_taken = Column(Float, nullable=True)  # seconds
+
+    owner = relationship("User", foreign_keys=[owner_id])
+
+
+# ==========================
+# NOTIFICATION MODEL
+# ==========================
 class Notification(Base):
     __tablename__ = "notifications"
 
@@ -45,5 +55,3 @@ class Notification(Base):
 
     user_id = Column(Integer, ForeignKey("users.id"))   # receiver
     sender_id = Column(Integer, ForeignKey("users.id")) # admin
-    
-    

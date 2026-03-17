@@ -17,11 +17,10 @@
     padding:25px;
     border-radius:12px;
     box-shadow:0 4px 10px rgba(0,0,0,0.1);
-}
 
-/* Header layout */
-.admin-header h1{
-    margin-bottom:10px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
 }
 
 /* Tasks board panel */
@@ -49,6 +48,33 @@
     padding:20px;
     border-radius:12px;
     box-shadow:0 4px 12px rgba(0,0,0,0.1);
+    cursor:pointer;
+    transition:0.2s;
+}
+
+.userColumn:hover{
+    transform:scale(1.03);
+}
+
+/* Task panel */
+#taskPanel{
+    background:white;
+    padding:25px;
+    border-radius:12px;
+    margin-top:40px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* Inputs */
+#taskPanel input{
+    width:100%;
+    padding:10px;
+    margin:10px 0;
+}
+
+/* Button */
+#taskPanel button{
+    width:100%;
 }
 
 </style>
@@ -62,7 +88,7 @@
 
     <div>
         <h1>Admin Panel</h1>
-        <p id="adminName">Logged in as: admin1@gmail.com</p>
+        <p id="adminName">Logged in as: admin</p>
     </div>
 
     <button onclick="logout()">Logout</button>
@@ -75,20 +101,24 @@
 
     <h2 class="users-title">USERS</h2>
 
+    <!-- USERS LIST -->
     <div id="usersContainer"></div>
-    <div id="taskPanel" style="display:none; margin-top:40px;">
 
-    <h2 id="taskUserTitle"></h2>
+    <!-- TASK ASSIGNMENT PANEL -->
+    <div id="taskPanel" style="display:none;">
 
-    <div id="taskList"></div>
+        <h2 id="taskUserTitle"></h2>
 
-    <h3>Assign Task</h3>
+        <div id="taskList"></div>
 
-    <input id="taskTitle" placeholder="Task title">
+        <h3>Assign Task</h3>
 
-    <button onclick="assignTask()">Assign Task</button>
+        <input id="taskTitle" placeholder="Task title">
+        <input id="taskDescription" placeholder="Task description">
 
-</div>
+        <button onclick="assignTask()">Assign Task</button>
+
+    </div>
 
 </div>
 

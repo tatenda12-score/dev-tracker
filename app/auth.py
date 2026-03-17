@@ -4,67 +4,51 @@ from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
-from app.models import User
 
 from app.database import get_db
 from app import models
-from fastapi import Depends
-
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
 # =========================
-# Security settings
+# SECURITY SETTINGS
 # =========================
-
 SECRET_KEY = "supersecretkey"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
-
-pwd_context = CryptContext(
-    schemes=["bcrypt"],
-    deprecated="auto"
-)
-
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
 # =========================
-# Password helpers
+# PASSWORD HELPERS
 # =========================
-
 def hash_password(password: str):
-    password = str(password)
-    return pwd_context.hash(password[:72])
+    return pwd_context.hash(str(password)[:72])
 
 
-def verify_password(plain_password, password_hash):
-    plain_password = str(plain_password)
-    return pwd_context.verify(plain_password[:72], password_hash)
+def verify_password(plain_password: str, password_hash: str):
+    return pwd_context.verify(str(plain_password)[:72], password_hash)
+
 
 # =========================
-# JWT Token creation
+# CREATE TOKEN
 # =========================
-
 def create_access_token(data: dict):
     to_encode = data.copy()
 
-    expire = datetime.utcnow() + timedelta(
-        minutes=ACCESS_TOKEN_EXPIRE_MINUTES
-    )
-
+    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
 
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
 # =========================
-# LOGIN ROUTE
+# LOGIN
 # =========================
-
 @router.post("/login")
 def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
@@ -75,37 +59,36 @@ def login(
         models.User.email == form_data.username
     ).first()
 
-    if not user:
+    if not user or not verify_password(form_data.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password"
         )
 
-    if not verify_password(form_data.password, user.password_hash):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password"
-        )
-
+    # ✅ INCLUDE ROLE + EMAIL IN TOKEN
     access_token = create_access_token(
-        data={"sub": user.email}
+        data={
+            "sub": user.email,
+            "role": user.role
+        }
     )
 
+    # ✅ MATCH FRONTEND EXPECTATION
     return {
         "access_token": access_token,
         "token_type": "bearer",
         "user": {
+            "id": user.id,
+            "name": user.name,
             "email": user.email,
-            "role": user.role,
-            "name": user.name
+            "role": user.role
         }
     }
 
 
 # =========================
-# Get current user
+# GET CURRENT USER
 # =========================
-
 def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db)
@@ -136,6 +119,18 @@ def get_current_user(
 
     return user
 
+
+# =========================
+# GET CURRENT USER (ROUTE)
+# =========================
 @router.get("/me")
-def get_current_logged_user(current_user: User = Depends(get_current_user)):
-    return current_user
+def get_current_logged_user(current_user: models.User = Depends(get_current_user)):
+    return {
+        "success": True,
+        "data": {
+            "id": current_user.id,
+            "name": current_user.name,
+            "email": current_user.email,
+            "role": current_user.role
+        }
+    }
