@@ -34,6 +34,7 @@ def get_my_tasks(
 # ==========================
 # GET TASKS FOR USER (ADMIN)
 # ==========================
+
 @router.get("/user/{user_id}")
 def get_tasks_for_user(user_id: int, db: Session = Depends(get_db)):
 
@@ -49,15 +50,14 @@ def get_tasks_for_user(user_id: int, db: Session = Depends(get_db)):
                 "title": t.title,
                 "description": t.description,
                 "status": t.status,
-                "created_at": t.created_at,
-                "start_time": t.start_time,
-                "end_time": t.end_time,
+                "created_at": t.created_at.isoformat() if t.created_at else None,
+                "start_time": t.start_time.isoformat() if t.start_time else None,
+                "end_time": t.end_time.isoformat() if t.end_time else None,
                 "time_taken": t.time_taken
             }
             for t in tasks
         ]
     }
-
 
 # ==========================
 # START TASK
