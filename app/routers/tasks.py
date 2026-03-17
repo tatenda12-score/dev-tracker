@@ -5,6 +5,7 @@ from datetime import datetime
 from app.database import get_db
 from app import models
 from app.auth import get_current_user
+from app.models import Task
 
 router = APIRouter(
     prefix="/tasks",
