@@ -34,7 +34,7 @@ class Task(Base):
 
     status = Column(String, default="Pending")  # ✅ IMPORTANT
     
-    created_at = Column(DateTime, default=datetime.utcnow) 
+    created_at = Column(DateTime, default=datetime.now)
 
     start_time = Column(DateTime, nullable=True)
     end_time = Column(DateTime, nullable=True)
