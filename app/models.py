@@ -27,8 +27,7 @@ class Task(Base):
     description = Column(Text, nullable=True)
     github_link = Column(String, nullable=True)
     hours_spent = Column(Float, nullable=False)
-    github_link = Column(String, nullable=True)
-    completed_at = Column(DateTime(timezone=True), server_default=func.now())
+
     completed_at = Column(DateTime, default=datetime.utcnow)
 
     owner_id = Column(Integer, ForeignKey("users.id"))

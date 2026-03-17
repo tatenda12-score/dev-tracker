@@ -35,20 +35,23 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
             status_code=409,
             detail="Email already registered"
         )
-        print("PASSWORD RECEIVED:", user.password)
-        print("TYPE:", type(user.password))
-        print("LENGTH:", len(user.password))
-        
-    new_user = models.User(
-        name=user.name,
-        email=user.email,
-        password_hash = hash_password(user.password),
-        role="USER"
-    )
 
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
+    try:
+        new_user = models.User(
+            name=user.name,
+            email=user.email,
+            password_hash=hash_password(user.password),
+            role="USER"
+        )
+
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+
+    except Exception as e:
+        db.rollback()
+        print("ERROR DURING REGISTER:", str(e))  # 👈 THIS WILL SHOW REAL ERROR IN RENDER LOGS
+        raise HTTPException(status_code=500, detail="Registration failed")
 
     return {
         "success": True,
@@ -60,7 +63,6 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
         },
         "message": "User created successfully"
     }
-
 from fastapi.security import OAuth2PasswordRequestForm
 
 
