@@ -55,7 +55,7 @@ async function getCurrentUser(){
     const user = await response.json();
 
     document.getElementById("adminName").innerText =
-        "Logged in as: " + user.email;
+        "Logged in as: " + user.name;
 }
 
 
