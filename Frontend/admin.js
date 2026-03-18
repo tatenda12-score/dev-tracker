@@ -33,7 +33,7 @@ async function loadBoard(){
         const taskData = await res.json();
         const tasks = taskData.data || [];
 
-        // ================= KPI CALCULATIONS =================
+        // KPI CALCULATIONS
         const totalTasks = tasks.length;
 
         const completedTasks = tasks.filter(
@@ -42,7 +42,6 @@ async function loadBoard(){
 
         const completedCount = completedTasks.length;
 
-        // Average time (seconds → minutes)
         let avgTime = 0;
 
         if (completedCount > 0) {
@@ -58,7 +57,7 @@ async function loadBoard(){
             ? Math.round((completedCount / totalTasks) * 100)
             : 0;
 
-        // ================= UI =================
+        // UI
         const card = document.createElement("div");
         card.className = "userColumn";
 
@@ -68,7 +67,7 @@ async function loadBoard(){
             <p>⏱ Avg Time: ${avgTime.toFixed(2)} min</p>
             <p>📊 Performance: ${performance}%</p>
             <button onclick="loadUserTasks(${user.id}, '${user.email}')">
-                Manage Tasks
+                Manage Work
             </button>
         `;
 
@@ -78,7 +77,7 @@ async function loadBoard(){
 
 
 // ==========================
-// LOAD USER TASKS (DETAIL PANEL)
+// LOAD USER TASKS + JOB CARDS
 // ==========================
 async function loadUserTasks(userId, email){
 
@@ -86,23 +85,24 @@ async function loadUserTasks(userId, email){
     selectedUserEmail = email;
 
     document.getElementById("taskPanel").style.display = "block";
-    document.getElementById("taskUserTitle").innerText = "Tasks for " + email;
+    document.getElementById("taskUserTitle").innerText = "Work for " + email;
 
+    const taskList = document.getElementById("taskList");
+    taskList.innerHTML = "";
+
+    // ================= TASKS =================
     const response = await fetch(
         `https://dev-tracker-yfvj.onrender.com/tasks/user/${userId}`, {
         headers:{ "Authorization": `Bearer ${token}` }
     });
 
     const result = await response.json();
-
     const tasks = result.data || [];
 
-    const taskList = document.getElementById("taskList");
-    taskList.innerHTML = "";
+    taskList.innerHTML += `<h3>Tasks</h3>`;
 
     tasks.forEach(task => {
 
-        // FORMAT TIMES SAFELY
         const assigned = task.created_at
             ? new Date(task.created_at).toLocaleString()
             : "N/A";
@@ -133,7 +133,54 @@ async function loadUserTasks(userId, email){
             </div>
         `;
     });
+
+    // ================= JOB CARDS =================
+    const jobRes = await fetch(
+        `https://dev-tracker-yfvj.onrender.com/job-cards/`, {
+        headers:{ "Authorization": `Bearer ${token}` }
+    });
+
+    const jobData = await jobRes.json();
+    const jobs = jobData.data || [];
+
+    taskList.innerHTML += `<h3>Job Cards</h3>`;
+
+    jobs
+    .filter(j => j.owner_id === userId)
+    .forEach(job => {
+
+        const assigned = job.created_at
+            ? new Date(job.created_at).toLocaleString()
+            : "N/A";
+
+        const opened = job.opened_at
+            ? new Date(job.opened_at).toLocaleString()
+            : "Not started";
+
+        const closed = job.closed_at
+            ? new Date(job.closed_at).toLocaleString()
+            : "Not completed";
+
+        const duration = job.duration
+            ? (job.duration / 60).toFixed(2) + " min"
+            : "0 min";
+
+        taskList.innerHTML += `
+            <div class="task-card">
+                <h4>${job.title}</h4>
+                <p>${job.description}</p>
+
+                <p><strong>Status:</strong> ${job.status}</p>
+
+                <p>📅 Assigned: ${assigned}</p>
+                <p>▶ Started: ${opened}</p>
+                <p>✅ Closed: ${closed}</p>
+                <p>⏱ Duration: ${duration}</p>
+            </div>
+        `;
+    });
 }
+
 
 // ==========================
 // ASSIGN TASK
@@ -148,7 +195,7 @@ async function assignTask(){
         return;
     }
 
-    const response = await fetch(
+    await fetch(
         "https://dev-tracker-yfvj.onrender.com/tasks/assign-task",{
         method:"POST",
         headers:{
@@ -158,13 +205,9 @@ async function assignTask(){
         body:JSON.stringify({
             title,
             description,
-            owner_id:selectedUserId,
-            status:"Pending"
+            owner_id:selectedUserId
         })
     });
-
-    const data = await response.json();
-    console.log("Assign:", data);
 
     alert("Task assigned successfully");
 
@@ -172,6 +215,42 @@ async function assignTask(){
 
     document.getElementById("taskTitle").value = "";
     document.getElementById("taskDescription").value = "";
+}
+
+
+// ==========================
+// CREATE JOB CARD (🔥 NEW)
+// ==========================
+async function createJobCard(){
+
+    const title = document.getElementById("jobTitle").value;
+    const description = document.getElementById("jobDescription").value;
+
+    if(!title || !description || !selectedUserId){
+        alert("Fill all fields and select user");
+        return;
+    }
+
+    await fetch(
+        "https://dev-tracker-yfvj.onrender.com/job-cards/",{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/json",
+            "Authorization":`Bearer ${token}`
+        },
+        body:JSON.stringify({
+            title,
+            description,
+            owner_id:selectedUserId
+        })
+    });
+
+    alert("Job card created successfully");
+
+    loadUserTasks(selectedUserId, selectedUserEmail);
+
+    document.getElementById("jobTitle").value = "";
+    document.getElementById("jobDescription").value = "";
 }
 
 

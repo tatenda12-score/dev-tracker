@@ -75,6 +75,14 @@
 /* Button */
 #taskPanel button{
     width:100%;
+    margin-bottom:10px;
+}
+
+/* Divider */
+hr{
+    border:none;
+    border-top:1px solid #ddd;
+    margin:25px 0;
 }
 
 </style>
@@ -96,7 +104,7 @@
 </div>
 
 
-<!-- TASK BOARD -->
+<!-- MAIN BOARD -->
 <div class="tasks-board">
 
     <h2 class="users-title">USERS</h2>
@@ -104,19 +112,35 @@
     <!-- USERS LIST -->
     <div id="usersContainer"></div>
 
-    <!-- TASK ASSIGNMENT PANEL -->
+
+    <!-- PANEL (TASKS + JOB CARDS) -->
     <div id="taskPanel" style="display:none;">
 
         <h2 id="taskUserTitle"></h2>
 
+        <!-- TASK LIST -->
         <div id="taskList"></div>
 
+
+        <!-- ================= TASK ================= -->
         <h3>Assign Task</h3>
 
         <input id="taskTitle" placeholder="Task title">
         <input id="taskDescription" placeholder="Task description">
 
         <button onclick="assignTask()">Assign Task</button>
+
+
+        <hr>
+
+
+        <!-- ================= JOB CARD ================= -->
+        <h3>Create Job Card</h3>
+
+        <input id="jobTitle" placeholder="Job title">
+        <input id="jobDescription" placeholder="Job description">
+
+        <button onclick="createJobCard()">Create Job Card</button>
 
     </div>
 
