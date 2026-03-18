@@ -5,20 +5,35 @@
     <link rel="stylesheet" href="styles.css">
 
     <style>
-        .main-layout{
-            display:flex;
-        }
+.main-layout{
+    display:flex;
+}
 
-        /* Sidebar */
-        .sidebar{
-            width:200px;
-            background:#0d1b2a;
-            padding:20px;
-            height:100vh;
-            position:fixed;
-            right: 0;
-            top: 0;
-        }
+/* RIGHT SIDEBAR */
+.sidebar{
+    width:200px;
+    background:#0d1b2a;
+    padding:20px;
+    height:100vh;
+    position:fixed;
+    right:0;
+    top:0;
+}
+
+/* MAIN CONTENT WRAPPER */
+    .container{
+    margin:120px auto 40px auto;          /* 👈 center horizontally */
+    margin-right:240px;        /* 👈 space for sidebar */
+
+    width:60%;                 /* 👈 balanced width */
+    min-width:600px;           /* 👈 prevents too small */
+    max-width:900px;           /* 👈 prevents too wide */
+
+    background:white;
+    padding:30px;
+    border-radius:16px;
+    box-shadow:0 6px 20px rgba(0,0,0,0.15);
+    }
 
         .sidebar button{
             width:100%;
@@ -36,11 +51,7 @@
         }
 
         /* Move main content */
-        .container{
-            margin-right:220px;
-            margin-left: 0;
-            width:auto;
-        }
+   
     </style>
 
 </head>
