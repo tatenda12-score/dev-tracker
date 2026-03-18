@@ -6,10 +6,11 @@ from app.database import engine, Base
 from app.auth import get_current_user
 from app import auth
 from app.routers import admin, users, tasks, analytics
+from app import job_cards
 
 # Create FastAPI app
 app = FastAPI()
-
+app.include_router(job_cards.router)
 # Create database tables
 Base.metadata.create_all(bind=engine)
 

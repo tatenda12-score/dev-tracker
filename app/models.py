@@ -20,7 +20,7 @@ class User(Base):
 
 
 # ==========================
-# TASK MODEL (UPDATED)
+# TASK MODEL (UNCHANGED)
 # ==========================
 class Task(Base):
     __tablename__ = "tasks"
@@ -32,7 +32,7 @@ class Task(Base):
     owner_id = Column(Integer, ForeignKey("users.id"))
     assigned_by_id = Column(Integer, ForeignKey("users.id"))
 
-    status = Column(String, default="Pending")  # ✅ IMPORTANT
+    status = Column(String, default="Pending")
     
     created_at = Column(DateTime, default=datetime.now)
 
@@ -45,7 +45,48 @@ class Task(Base):
 
 
 # ==========================
-# NOTIFICATION MODEL
+# JOB CARD MODEL (NEW 🔥)
+# ==========================
+class JobCard(Base):
+    __tablename__ = "job_cards"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    title = Column(String, nullable=False)
+    description = Column(Text)
+
+    owner_id = Column(Integer, ForeignKey("users.id"))
+    assigned_by_id = Column(Integer, ForeignKey("users.id"))
+
+    status = Column(String, default="Pending")  # Pending, Open, Closed
+
+    created_at = Column(DateTime, default=datetime.utcnow)  # assigned time
+    opened_at = Column(DateTime, nullable=True)
+    closed_at = Column(DateTime, nullable=True)
+
+    duration = Column(Float, nullable=True)  # seconds
+
+    owner = relationship("User", foreign_keys=[owner_id])
+
+
+# ==========================
+# JOB UPDATE MODEL (NEW 🔥)
+# ==========================
+class JobUpdate(Base):
+    __tablename__ = "job_updates"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    job_id = Column(Integer, ForeignKey("job_cards.id"))
+    message = Column(Text)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    job = relationship("JobCard")
+
+
+# ==========================
+# NOTIFICATION MODEL (UNCHANGED)
 # ==========================
 class Notification(Base):
     __tablename__ = "notifications"
@@ -55,5 +96,5 @@ class Notification(Base):
     is_read = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    user_id = Column(Integer, ForeignKey("users.id"))   # receiver
-    sender_id = Column(Integer, ForeignKey("users.id")) # admin
+    user_id = Column(Integer, ForeignKey("users.id"))
+    sender_id = Column(Integer, ForeignKey("users.id"))
