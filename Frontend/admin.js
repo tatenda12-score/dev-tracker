@@ -62,14 +62,15 @@ async function loadBoard(){
         card.className = "userColumn";
 
         card.innerHTML = `
-            <h3>${user.email}</h3>
-            <p>✔ Completed: ${completedCount}</p>
-            <p>⏱ Avg Time: ${avgTime.toFixed(2)} min</p>
-            <p>📊 Performance: ${performance}%</p>
-            <button onclick="loadUserTasks(${user.id}, '${user.email}')">
-                Manage Work
-            </button>
-        `;
+    <h3>${user.email}</h3>
+    <p>✔ Completed: ${completedCount}</p>
+    <p>⏱ Avg Time: ${avgTime.toFixed(2)} min</p>
+    <p>📊 Performance: ${performance}%</p>
+
+    <button onclick="openDrawer(${user.id}, '${user.email}')">
+        Manage Work
+    </button>
+`;
 
         container.appendChild(card);
     }
