@@ -5,6 +5,7 @@ from datetime import datetime
 from app.database import get_db
 from app.models import JobCard, JobUpdate, User
 from app.auth import get_current_user
+from app.models import JobCard, User
 
 router = APIRouter(prefix="/job-cards", tags=["Job Cards"])
 
@@ -181,11 +182,11 @@ def close_job_card(
 @router.get("/")
 def get_my_job_cards(
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
-    jobs = db.query(models.JobCard).filter(
-        models.JobCard.owner_id == current_user.id
-    ).order_by(models.JobCard.id.desc()).all()
+    jobs = db.query(JobCard).filter(
+        JobCard.owner_id == current_user.id
+    ).order_by(JobCard.id.desc()).all()
 
     return {
         "success": True,
