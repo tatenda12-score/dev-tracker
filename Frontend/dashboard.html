@@ -5,35 +5,20 @@
     <link rel="stylesheet" href="styles.css">
 
     <style>
-.main-layout{
-    display:flex;
-}
+        .main-layout{
+            display:flex;
+        }
 
-/* RIGHT SIDEBAR */
-.sidebar{
-    width:200px;
-    background:#0d1b2a;
-    padding:20px;
-    height:100vh;
-    position:fixed;
-    right:0;
-    top:0;
-}
-
-/* MAIN CONTENT WRAPPER */
-    .container{
-    margin:120px auto 40px auto;          /* 👈 center horizontally */
-    margin-right:240px;        /* 👈 space for sidebar */
-
-    width:60%;                 /* 👈 balanced width */
-    min-width:600px;           /* 👈 prevents too small */
-    max-width:900px;           /* 👈 prevents too wide */
-
-    background:white;
-    padding:30px;
-    border-radius:16px;
-    box-shadow:0 6px 20px rgba(0,0,0,0.15);
-    }
+        /* RIGHT SIDEBAR */
+        .sidebar{
+            width:200px;
+            background:#0d1b2a;
+            padding:20px;
+            height:100vh;
+            position:fixed;
+            right:0;
+            top:0;
+        }
 
         .sidebar button{
             width:100%;
@@ -50,8 +35,44 @@
             background:#415a77;
         }
 
-        /* Move main content */
-   
+        /* MAIN CONTAINER */
+        .container{
+            margin:120px auto 40px auto;
+            margin-right:240px;
+
+            width:60%;
+            min-width:600px;
+            max-width:900px;
+
+            background:white;
+            padding:30px;
+            border-radius:16px;
+            box-shadow:0 6px 20px rgba(0,0,0,0.15);
+        }
+
+        /* 🔔 ALERT BOX */
+        #jobAlert{
+            display:none;
+            background:#ff4d4d;
+            color:white;
+            padding:12px;
+            border-radius:8px;
+            margin-bottom:15px;
+            font-weight:bold;
+        }
+
+        /* 🔥 NEW JOB HIGHLIGHT */
+        .new-job{
+            border-left:6px solid red;
+            animation:pulse 1s infinite;
+        }
+
+        @keyframes pulse{
+            0%{ transform:scale(1); }
+            50%{ transform:scale(1.01); }
+            100%{ transform:scale(1); }
+        }
+
     </style>
 
 </head>
@@ -75,10 +96,10 @@
             <button onclick="showSection('jobs')">My Job Cards</button>
         </div>
 
-        <!-- MAIN CONTAINER -->
+        <!-- MAIN CONTENT -->
         <div class="container">
 
-            <!-- TOP BAR -->
+            <!-- HEADER -->
             <div class="top-bar">
                 <div class="brand">
                     <h2>My Dashboard</h2>
@@ -86,17 +107,22 @@
                 </div>
             </div>
 
+            <!-- 🔔 JOB ALERT -->
+            <div id="jobAlert">
+                🔔 New Job Assigned! Please start it.
+            </div>
+
             <!-- NOTIFICATIONS -->
             <h3>Notifications</h3>
             <div id="notifications"></div>
 
-            <!-- TASKS SECTION -->
+            <!-- TASKS -->
             <div id="tasksSection">
                 <h3>My Tasks</h3>
                 <div id="tasks"></div>
             </div>
 
-            <!-- JOB CARDS SECTION -->
+            <!-- JOB CARDS -->
             <div id="jobsSection" style="display:none;">
                 <h3>My Job Cards</h3>
                 <div id="jobCards"></div>

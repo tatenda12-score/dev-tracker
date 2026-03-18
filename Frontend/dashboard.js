@@ -1,4 +1,3 @@
-// ================= AUTH CHECK =================
 if (!localStorage.getItem("token")) {
     window.location.href = "login.html";
 }
@@ -14,7 +13,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 
-// ================= SECTION SWITCHING (🔥 NEW) =================
+// ================= SECTION SWITCHING =================
 function showSection(section){
 
     const tasks = document.getElementById("tasksSection");
@@ -69,7 +68,7 @@ async function loadNotifications() {
 }
 
 
-// ================= ACTIVE TASKS =================
+// ================= TASKS =================
 async function loadTasks() {
 
     const response = await apiRequest("/tasks/my-tasks");
@@ -79,7 +78,9 @@ async function loadTasks() {
     const container = document.getElementById("tasks");
     container.innerHTML = "";
 
-    tasks.forEach(task => {
+    tasks
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .forEach(task =>  {
 
         const assigned = task.created_at
             ? new Date(task.created_at).toLocaleString()
@@ -134,9 +135,27 @@ async function loadJobCards(){
     const jobs = response.data || [];
 
     const container = document.getElementById("jobCards");
+    const alertBox = document.getElementById("jobAlert");
+
     container.innerHTML = "";
 
-    jobs.forEach(job => {
+    let hasPendingJob = false;
+
+    jobs
+    .sort((a, b) => {
+
+        // Pending first
+        if (a.status === "Pending" && b.status !== "Pending") return -1;
+        if (a.status !== "Pending" && b.status === "Pending") return 1;
+
+        // newest first
+        return new Date(b.created_at) - new Date(a.created_at);
+    })
+    .forEach(job => {
+
+        if(job.status === "Pending"){
+            hasPendingJob = true;
+        }
 
         const assigned = job.created_at
             ? new Date(job.created_at).toLocaleString()
@@ -155,8 +174,12 @@ async function loadJobCards(){
             : "0 min";
 
         container.innerHTML += `
-            <div class="task-card">
-                <h4>${job.title}</h4>
+            <div class="task-card ${job.status === "Pending" ? "new-job" : ""}">
+                <h4>
+                    ${job.title}
+                    ${job.status === "Pending" ? " 🔴 NEW" : ""}
+                </h4>
+
                 <p>${job.description}</p>
 
                 <p><strong>Status:</strong> ${job.status}</p>
@@ -184,6 +207,14 @@ async function loadJobCards(){
             </div>
         `;
     });
+
+    // 🔔 ALERT LOGIC
+    if(hasPendingJob){
+        alertBox.style.display = "block";
+        showSection("jobs"); // auto focus jobs
+    } else {
+        alertBox.style.display = "none";
+    }
 }
 
 
