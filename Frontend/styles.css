@@ -197,3 +197,42 @@ button:hover{
     margin:150px auto;
     border-radius:10px;
 }
+
+/* Video Background (Login Only) */
+/* ========================= */
+/* LOGIN PAGE VIDEO BACKGROUND */
+/* ========================= */
+
+.login-page::before {
+    display: none;
+}
+
+/* Video */
+#bgVideo {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: -2;
+    filter: brightness(1.3) contrast(1.1);
+
+}
+
+/* Dark overlay */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.05);
+    z-index: -1;
+}
+
+/* Ensure form is above video */
+.container {
+    position: relative;
+    z-index: 1;
+}
