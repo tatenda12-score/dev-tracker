@@ -81,17 +81,47 @@ async function loadTasks() {
 
     tasks.forEach(task => {
 
-        if (task.status === "In Progress") {
+        const assigned = task.created_at
+            ? new Date(task.created_at).toLocaleString()
+            : "N/A";
 
-            container.innerHTML += `
-                <div class="task-card">
-                    <h4>${task.title}</h4>
-                    <p>${task.description}</p>
-                    <button onclick="completeTask(${task.id})">Complete</button>
-                </div>
-            `;
-        }
+        const started = task.start_time
+            ? new Date(task.start_time).toLocaleString()
+            : "Not started";
 
+        const completed = task.end_time
+            ? new Date(task.end_time).toLocaleString()
+            : "Not completed";
+
+        const duration = task.time_taken
+            ? (task.time_taken / 60).toFixed(2) + " min"
+            : "0 min";
+
+        container.innerHTML += `
+            <div class="task-card">
+                <h4>${task.title}</h4>
+                <p>${task.description}</p>
+
+                <p><strong>Status:</strong> ${task.status}</p>
+
+                <p>📅 Assigned: ${assigned}</p>
+                <p>▶ Started: ${started}</p>
+                <p>✅ Completed: ${completed}</p>
+                <p>⏱ Duration: ${duration}</p>
+
+                ${
+                    task.status === "Pending"
+                    ? `<button onclick="startTask(${task.id})">Start Task</button>`
+                    : ""
+                }
+
+                ${
+                    task.status === "In Progress"
+                    ? `<button onclick="completeTask(${task.id})">Complete</button>`
+                    : ""
+                }
+            </div>
+        `;
     });
 }
 
