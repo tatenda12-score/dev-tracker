@@ -79,7 +79,19 @@ async function loadTasks() {
     container.innerHTML = "";
 
     tasks
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .sort((a, b) => {
+
+        // 1. In Progress first 🔥
+        if (a.status === "In Progress" && b.status !== "In Progress") return -1;
+        if (a.status !== "In Progress" && b.status === "In Progress") return 1;
+
+        // 2. Then Pending
+        if (a.status === "Pending" && b.status !== "Pending") return -1;
+        if (a.status !== "Pending" && b.status === "Pending") return 1;
+
+        // 3. Then newest
+        return new Date(b.created_at) - new Date(a.created_at);
+    })
     .forEach(task =>  {
 
         const assigned = task.created_at
@@ -99,7 +111,7 @@ async function loadTasks() {
             : "0 min";
 
         container.innerHTML += `
-            <div class="task-card">
+            <div class="task-card ${task.status === "In Progress" ? "active-task" : ""}">
                 <h4>${task.title}</h4>
                 <p>${task.description}</p>
 

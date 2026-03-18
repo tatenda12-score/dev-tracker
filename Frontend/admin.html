@@ -85,62 +85,111 @@ hr{
     margin:25px 0;
 }
 
+.drawer{
+    position:fixed;
+    top:0;
+    right:-100%;
+    width:80%;
+    height:100%;
+    background:white;
+    box-shadow:-5px 0 20px rgba(0,0,0,0.2);
+    transition:0.3s;
+    z-index:999;
+}
+
+.drawer.active{
+    right:0;
+}
+
+.drawer-content{
+    display:flex;
+    flex-direction:column;
+    height:100%;
+}
+
+.drawer-header{
+    display:flex;
+    justify-content:space-between;
+    padding:20px;
+    border-bottom:1px solid #ddd;
+}
+
+.drawer-body{
+    display:flex;
+    flex:1;
+}
+
+.drawer-left{
+    width:60%;
+    padding:20px;
+    overflow-y:auto;
+    border-right:1px solid #ddd;
+}
+
+.drawer-right{
+    width:40%;
+    padding:20px;
+}
+
 </style>
 
 </head>
 
 <body>
 
-<!-- TOP ADMIN PANEL -->
+<!-- HEADER -->
 <div class="admin-header">
-
     <div>
         <h1>Admin Panel</h1>
         <p id="adminName">Logged in as: admin</p>
     </div>
-
     <button onclick="logout()">Logout</button>
-
 </div>
 
-
-<!-- MAIN BOARD -->
+<!-- USERS -->
 <div class="tasks-board">
-
     <h2 class="users-title">USERS</h2>
-
-    <!-- USERS LIST -->
     <div id="usersContainer"></div>
+</div>
 
+<!-- DRAWER (MAIN FEATURE 🔥) -->
+<div id="workDrawer" class="drawer">
 
-    <!-- PANEL (TASKS + JOB CARDS) -->
-    <div id="taskPanel" style="display:none;">
+    <div class="drawer-content">
 
-        <h2 id="taskUserTitle"></h2>
+        <!-- HEADER -->
+        <div class="drawer-header">
+            <h2 id="drawerUserTitle"></h2>
+            <button onclick="closeDrawer()">✖</button>
+        </div>
 
-        <!-- TASK LIST -->
-        <div id="taskList"></div>
+        <!-- BODY -->
+        <div class="drawer-body">
 
+            <!-- LEFT -->
+            <div class="drawer-left">
+                <h3>Task History</h3>
+                <div id="drawerTaskList"></div>
+            </div>
 
-        <!-- ================= TASK ================= -->
-        <h3>Assign Task</h3>
+            <!-- RIGHT -->
+            <div class="drawer-right">
 
-        <input id="taskTitle" placeholder="Task title">
-        <input id="taskDescription" placeholder="Task description">
+                <h3>Assign Task</h3>
+                <input id="taskTitle" placeholder="Task title">
+                <input id="taskDescription" placeholder="Task description">
+                <button onclick="assignTask()">Assign Task</button>
 
-        <button onclick="assignTask()">Assign Task</button>
+                <hr>
 
+                <h3>Create Job Card</h3>
+                <input id="jobTitle" placeholder="Job title">
+                <input id="jobDescription" placeholder="Job description">
+                <button onclick="createJobCard()">Create Job Card</button>
 
-        <hr>
+            </div>
 
-
-        <!-- ================= JOB CARD ================= -->
-        <h3>Create Job Card</h3>
-
-        <input id="jobTitle" placeholder="Job title">
-        <input id="jobDescription" placeholder="Job description">
-
-        <button onclick="createJobCard()">Create Job Card</button>
+        </div>
 
     </div>
 
@@ -149,5 +198,4 @@ hr{
 <script src="admin.js"></script>
 
 </body>
-
 </html>

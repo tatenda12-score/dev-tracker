@@ -278,6 +278,45 @@ function logout(){
     window.location.href = "login.html";
 }
 
+function openDrawer(userId, email){
+    selectedUserId = userId;
+    selectedUserEmail = email;
+
+    document.getElementById("drawerUserTitle").innerText = "Work for " + email;
+    document.getElementById("workDrawer").classList.add("active");
+
+    loadDrawerTasks(userId);
+}
+
+function closeDrawer(){
+    document.getElementById("workDrawer").classList.remove("active");
+}
+
+async function loadDrawerTasks(userId){
+
+    const response = await fetch(
+        `https://dev-tracker-yfvj.onrender.com/tasks/user/${userId}`, {
+        headers:{ "Authorization": `Bearer ${token}` }
+    });
+
+    const result = await response.json();
+    const tasks = result.data || [];
+
+    const container = document.getElementById("drawerTaskList");
+    container.innerHTML = "";
+
+    tasks.forEach(task => {
+
+        container.innerHTML += `
+            <div class="task-card">
+                <h4>${task.title}</h4>
+                <p>${task.description}</p>
+                <p>Status: ${task.status}</p>
+            </div>
+        `;
+    });
+}
+
 
 // ==========================
 // START
