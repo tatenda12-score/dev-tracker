@@ -177,3 +177,30 @@ def close_job_card(
     db.commit()
 
     return {"success": True, "message": "Job closed"}
+
+@router.get("/")
+def get_my_job_cards(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    jobs = db.query(models.JobCard).filter(
+        models.JobCard.owner_id == current_user.id
+    ).order_by(models.JobCard.id.desc()).all()
+
+    return {
+        "success": True,
+        "data": [
+            {
+                "id": j.id,
+                "title": j.title,
+                "description": j.description,
+                "status": j.status,
+                "owner_id": j.owner_id,
+                "created_at": j.created_at.isoformat() if j.created_at else None,
+                "opened_at": j.opened_at.isoformat() if j.opened_at else None,
+                "closed_at": j.closed_at.isoformat() if j.closed_at else None,
+                "duration": j.duration
+            }
+            for j in jobs
+        ]
+    }
