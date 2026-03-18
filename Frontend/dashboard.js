@@ -7,8 +7,27 @@ document.addEventListener("DOMContentLoaded", function () {
     loadTasks();
     loadNotifications();
     loadUser();
-    loadJobCards(); // 🔥 NEW
+    loadJobCards();
+
+    // default view
+    showSection("tasks");
 });
+
+
+// ================= SECTION SWITCHING (🔥 NEW) =================
+function showSection(section){
+
+    const tasks = document.getElementById("tasksSection");
+    const jobs = document.getElementById("jobsSection");
+
+    if(section === "tasks"){
+        tasks.style.display = "block";
+        jobs.style.display = "none";
+    } else {
+        tasks.style.display = "none";
+        jobs.style.display = "block";
+    }
+}
 
 
 // ================= USER =================
@@ -77,7 +96,7 @@ async function loadTasks() {
 }
 
 
-// ================= JOB CARDS (🔥 NEW FEATURE) =================
+// ================= JOB CARDS =================
 async function loadJobCards(){
 
     const response = await apiRequest("/job-cards/");
@@ -179,4 +198,11 @@ async function completeTask(taskId) {
     await apiRequest(`/tasks/complete/${taskId}`, "PUT");
 
     loadTasks();
+}
+
+
+// ================= LOGOUT =================
+function logout(){
+    localStorage.clear();
+    window.location.href = "login.html";
 }

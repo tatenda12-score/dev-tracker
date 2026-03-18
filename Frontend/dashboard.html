@@ -3,6 +3,43 @@
 <head>
     <title>Dashboard</title>
     <link rel="stylesheet" href="styles.css">
+
+    <style>
+        .main-layout{
+            display:flex;
+        }
+
+        /* Sidebar */
+        .sidebar{
+            width:200px;
+            background:#0d1b2a;
+            padding:20px;
+            height:100vh;
+            position:fixed;
+        }
+
+        .sidebar button{
+            width:100%;
+            padding:12px;
+            margin-bottom:10px;
+            background:#1b263b;
+            color:white;
+            border:none;
+            cursor:pointer;
+            border-radius:6px;
+        }
+
+        .sidebar button:hover{
+            background:#415a77;
+        }
+
+        /* Move main content */
+        .container{
+            margin-left:220px;
+            width:100%;
+        }
+    </style>
+
 </head>
 
 <body>
@@ -16,32 +53,42 @@
         <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
 
-    <!-- MAIN CONTAINER -->
-    <div class="container">
+    <div class="main-layout">
 
-        <!-- TOP BAR -->
-        <div class="top-bar">
-            <div class="brand">
-                <h2>My Dashboard</h2>
-                <h3 class="company-name">Blitztech Electronics</h3>
-            </div>
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+            <button onclick="showSection('tasks')">My Tasks</button>
+            <button onclick="showSection('jobs')">My Job Cards</button>
         </div>
 
-        <!-- NOTIFICATIONS -->
-        <h3>Notifications</h3>
-        <div id="notifications"></div>
+        <!-- MAIN CONTAINER -->
+        <div class="container">
 
-        <!-- ========================== -->
-        <!-- JOB CARDS (NEW 🔥) -->
-        <!-- ========================== -->
-        <h3>My Job Cards</h3>
-        <div id="jobCards"></div>
+            <!-- TOP BAR -->
+            <div class="top-bar">
+                <div class="brand">
+                    <h2>My Dashboard</h2>
+                    <h3 class="company-name">Blitztech Electronics</h3>
+                </div>
+            </div>
 
-        <!-- ========================== -->
-        <!-- TASKS (EXISTING) -->
-        <!-- ========================== -->
-        <h3>My Tasks</h3>
-        <div id="tasks"></div>
+            <!-- NOTIFICATIONS -->
+            <h3>Notifications</h3>
+            <div id="notifications"></div>
+
+            <!-- TASKS SECTION -->
+            <div id="tasksSection">
+                <h3>My Tasks</h3>
+                <div id="tasks"></div>
+            </div>
+
+            <!-- JOB CARDS SECTION -->
+            <div id="jobsSection" style="display:none;">
+                <h3>My Job Cards</h3>
+                <div id="jobCards"></div>
+            </div>
+
+        </div>
 
     </div>
 
