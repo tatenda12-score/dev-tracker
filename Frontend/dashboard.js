@@ -95,22 +95,21 @@ async function loadTasks() {
     .forEach(task =>  {
 
         const assigned = task.created_at
-            ? new Date(task.created_at).toLocaleString()
+            ? new Date(task.created_at).toLocaleString("en-ZW", { timeZone: "Africa/Harare" })
             : "N/A";
 
         const started = task.start_time
-            ? new Date(task.start_time).toLocaleString()
+            ? new Date(task.start_time).toLocaleString("en-ZW", { timeZone: "Africa/Harare" })
             : "Not started";
 
         const completed = task.end_time
-            ? new Date(task.end_time).toLocaleString()
+            ? new Date(task.end_time).toLocaleString("en-ZW", { timeZone: "Africa/Harare" })
             : "Not completed";
 
         const duration = task.time_taken
             ? (task.time_taken / 60).toFixed(2) + " min"
             : "0 min";
 
-        // ✅ Safe GitHub link handling
         const githubLink = task.github_link && task.github_link.trim() !== ""
             ? `<p>🔗 <a href="${task.github_link}" target="_blank">View GitHub Repo</a></p>`
             : "";
@@ -144,7 +143,6 @@ async function loadTasks() {
         `;
     });
 }
-
 // ================= JOB CARDS =================
 async function loadJobCards(){
 
@@ -176,15 +174,15 @@ async function loadJobCards(){
         }
 
         const assigned = job.created_at
-            ? new Date(job.created_at).toLocaleString()
+            ? new Date(job.created_at).toLocaleString("en-ZW", { timeZone: "Africa/Harare" })
             : "N/A";
 
         const opened = job.opened_at
-            ? new Date(job.opened_at).toLocaleString()
+            ? new Date(job.opened_at).toLocaleString("en-ZW", { timeZone: "Africa/Harare" })
             : "Not started";
 
         const closed = job.closed_at
-            ? new Date(job.closed_at).toLocaleString()
+            ? new Date(job.closed_at).toLocaleString("en-ZW", { timeZone: "Africa/Harare" })
             : "Not completed";
 
         const duration = job.duration
@@ -226,10 +224,10 @@ async function loadJobCards(){
         `;
     });
 
-    // 🔔 ALERT LOGIC
+    // 🔔 ALERT LOGIC (UNCHANGED)
     if(hasPendingJob){
         alertBox.style.display = "block";
-        showSection("jobs"); // auto focus jobs
+        showSection("jobs");
     } else {
         alertBox.style.display = "none";
     }
