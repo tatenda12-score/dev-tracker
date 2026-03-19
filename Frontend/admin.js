@@ -333,6 +333,10 @@ async function loadAdminNotifications(){
     panel.innerHTML = "";
 
     count.innerText = notifications.length;
+    if(notifications.length === 0){
+        panel.innerHTML = "<p style='padding:10px;'>No new notifications</p>";
+        return;
+    }
 
     notifications.forEach(n => {
         panel.innerHTML += `
@@ -343,13 +347,34 @@ async function loadAdminNotifications(){
     });
 }
 
-function toggleNotifications(){
+async function toggleNotifications(){
+
     const panel = document.getElementById("notificationsPanel");
 
     if(panel.style.display === "block"){
         panel.style.display = "none";
     } else {
         panel.style.display = "block";
+
+        // 🔥 mark as read in backend
+        await fetch(
+            "https://dev-tracker-yfvj.onrender.com/tasks/notifications/read",
+            {
+                method: "PUT",
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            }
+        );
+
+        // 🔥 clear UI immediately
+        panel.innerHTML = "";
+
+        // 🔥 reset counter
+        document.getElementById("notifCount").innerText = 0;
+
+        // 🔥 reload clean state
+        loadAdminNotifications();
     }
 }
 // ==========================
