@@ -240,3 +240,135 @@ button:hover{
 .active-task{
     border-left:6px solid #00c853;
 }
+
+/* ========================= */
+/* LOGIN PAGE FIXES (SAFE) */
+/* ========================= */
+
+/* Center login page properly */
+.login-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+/* Override container ONLY for login */
+.login-page .container {
+    width: 400px;
+    margin: 0;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Fix form layout (stack inputs + button) */
+#loginForm {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+/* Improve inputs */
+#loginForm input {
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+
+/* Improve button */
+#loginForm button {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+}
+
+/* ========================= */
+/* LOGIN SIDE LOGO (SAFE) */
+/* ========================= */
+
+.login-page .container {
+    position: relative; /* allow absolute positioning */
+}
+
+/* Position logo on right side */
+.side-logo {
+    position: absolute;
+
+    top: 110px;   /* 🔥 moved up (was 140px) */
+    right: 80px;
+
+    width: 150px;
+    opacity: 0.95;
+}
+
+@media (max-width: 500px) {
+    .side-logo {
+        display: none;
+    }
+}
+
+/* ========================= */
+/* REGISTER PAGE (SCOPED FIX) */
+/* ========================= */
+
+/* Center the card */
+.register-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+/* Fix container size + glass */
+.register-page .container {
+    width: 400px;   /* 🔥 stop stretching */
+    margin: 0;
+    padding: 40px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    /* 🔥 GLASS EFFECT */
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* Fix form layout */
+#registerForm {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+/* Inputs look good on glass */
+#registerForm input {
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
+
+    background: rgba(255,255,255,0.25);
+    border: 1px solid rgba(255,255,255,0.3);
+}
+
+/* Button spacing */
+#registerForm button {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+}
+
+#registerForm input::placeholder {
+    color: rgba(0,0,0,0.6);
+}

@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from app.database import get_db
 from app import models
 from app.auth import get_current_user
+from app.models import Task
 
 router = APIRouter(
     prefix="/tasks",
@@ -114,7 +115,7 @@ def complete_task(
     task.time_taken = (task.end_time - task.start_time).total_seconds()
 
     # ==========================
-    # 🔔 NOTIFY ADMIN (FIXED)
+    # 🔔 NOTIFY ADMIN
     # ==========================
     admin_users = db.query(models.User).filter(models.User.role == "ADMIN").all()
 
