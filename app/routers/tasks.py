@@ -1,11 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.database import get_db
 from app import models
 from app.auth import get_current_user
-from app.models import Task
 
 router = APIRouter(
     prefix="/tasks",
@@ -38,8 +37,8 @@ def get_my_tasks(
 @router.get("/user/{user_id}")
 def get_tasks_for_user(user_id: int, db: Session = Depends(get_db)):
 
-    tasks = db.query(Task).filter(
-        Task.owner_id == user_id
+    tasks = db.query(models.Task).filter(
+        models.Task.owner_id == user_id
     ).all()
 
     return {
@@ -81,7 +80,7 @@ def start_task(
         return {"success": False, "message": "Task already started"}
 
     task.status = "In Progress"
-    task.start_time = datetime.utcnow()  # ✅ FIXED
+    task.start_time = datetime.now(timezone.utc)  # ✅ FIXED
 
     db.commit()
 
@@ -109,10 +108,23 @@ def complete_task(
         return {"success": False, "message": "Task not started yet"}
 
     task.status = "Completed"
-    task.end_time = datetime.utcnow()  # ✅ FIXED
+    task.end_time = datetime.now(timezone.utc)  # ✅ FIXED
 
     # calculate duration safely
     task.time_taken = (task.end_time - task.start_time).total_seconds()
+
+    # ==========================
+    # 🔔 NOTIFY ADMIN (FIXED)
+    # ==========================
+    admin_users = db.query(models.User).filter(models.User.role == "ADMIN").all()
+
+    for admin in admin_users:
+        notification = models.Notification(
+            message=f"{current_user.name} completed task: {task.title}",
+            user_id=admin.id,
+            sender_id=current_user.id
+        )
+        db.add(notification)
 
     db.commit()
 
