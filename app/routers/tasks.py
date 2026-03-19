@@ -112,7 +112,17 @@ def complete_task(
     task.end_time = datetime.now(timezone.utc)  # ✅ FIXED
 
     # calculate duration safely
-    task.time_taken = (task.end_time - task.start_time).total_seconds()
+    # normalize both datetimes
+    start = task.start_time
+    end = task.end_time
+
+    if start.tzinfo is None:
+       start = start.replace(tzinfo=timezone.utc)
+
+    if end.tzinfo is None: 
+      end = end.replace(tzinfo=timezone.utc)
+
+    task.time_taken = (end - start).total_seconds()
 
     # ==========================
     # 🔔 NOTIFY ADMIN
