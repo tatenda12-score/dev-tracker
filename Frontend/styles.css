@@ -372,3 +372,19 @@ button:hover{
 #registerForm input::placeholder {
     color: rgba(0,0,0,0.6);
 }
+
+/* ========================= */
+/* CENTER BELL (SAFE) */
+/* ========================= */
+
+.admin-header {
+    position: relative; /* needed for absolute positioning */
+}
+
+/* center the bell */
+.admin-bell {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 25px; /* adjust vertically */
+}
