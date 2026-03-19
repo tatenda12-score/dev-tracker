@@ -16,11 +16,13 @@ class User(Base):
     email = Column(String, unique=True, nullable=False, index=True)
     password_hash = Column(String, nullable=False)
     role = Column(String, nullable=False)  # ADMIN or USER
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # ✅ FIX: keep consistent with others
+    created_at = Column(DateTime, default=datetime.utcnow)
 
 
 # ==========================
-# TASK MODEL (UNCHANGED)
+# TASK MODEL
 # ==========================
 class Task(Base):
     __tablename__ = "tasks"
@@ -34,7 +36,7 @@ class Task(Base):
 
     status = Column(String, default="Pending")
     
-    created_at = Column(DateTime, default=datetime.now)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
     start_time = Column(DateTime, nullable=True)
     end_time = Column(DateTime, nullable=True)
@@ -45,7 +47,7 @@ class Task(Base):
 
 
 # ==========================
-# JOB CARD MODEL (NEW 🔥)
+# JOB CARD MODEL
 # ==========================
 class JobCard(Base):
     __tablename__ = "job_cards"
@@ -60,7 +62,7 @@ class JobCard(Base):
 
     status = Column(String, default="Pending")  # Pending, Open, Closed
 
-    created_at = Column(DateTime, default=datetime.utcnow)  # assigned time
+    created_at = Column(DateTime, default=datetime.utcnow)
     opened_at = Column(DateTime, nullable=True)
     closed_at = Column(DateTime, nullable=True)
 
@@ -70,7 +72,7 @@ class JobCard(Base):
 
 
 # ==========================
-# JOB UPDATE MODEL (NEW 🔥)
+# JOB UPDATE MODEL
 # ==========================
 class JobUpdate(Base):
     __tablename__ = "job_updates"
@@ -86,7 +88,7 @@ class JobUpdate(Base):
 
 
 # ==========================
-# NOTIFICATION MODEL (UNCHANGED)
+# NOTIFICATION MODEL
 # ==========================
 class Notification(Base):
     __tablename__ = "notifications"
@@ -94,6 +96,7 @@ class Notification(Base):
     id = Column(Integer, primary_key=True, index=True)
     message = Column(String, nullable=False)
     is_read = Column(Boolean, default=False)
+
     created_at = Column(DateTime, default=datetime.utcnow)
 
     user_id = Column(Integer, ForeignKey("users.id"))

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from datetime import datetime, timezone
+from datetime import datetime
 
 from app.database import get_db
 from app import models
@@ -77,12 +77,11 @@ def start_task(
     if task.owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not allowed")
 
-    # prevent restarting
     if task.status == "In Progress":
         return {"success": False, "message": "Task already started"}
 
     task.status = "In Progress"
-    task.start_time = datetime.now(timezone.utc)  # ✅ FIXED
+    task.start_time = datetime.utcnow()  # ✅ FIXED
 
     db.commit()
 
@@ -106,14 +105,13 @@ def complete_task(
     if task.owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not allowed")
 
-    # prevent completing without starting
     if not task.start_time:
         return {"success": False, "message": "Task not started yet"}
 
     task.status = "Completed"
-    task.end_time = datetime.now(timezone.utc)  # ✅ FIXED
+    task.end_time = datetime.utcnow()  # ✅ FIXED
 
-    # calculate duration
+    # calculate duration safely
     task.time_taken = (task.end_time - task.start_time).total_seconds()
 
     db.commit()
@@ -145,7 +143,6 @@ def assign_task(
     db.commit()
     db.refresh(new_task)
 
-    # notification
     notification = models.Notification(
         message=f"New task assigned: {data['title']}",
         user_id=data["owner_id"],
