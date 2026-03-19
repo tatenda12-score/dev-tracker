@@ -154,6 +154,42 @@ hr{
     background:#1b263b;
     color:white;
 }
+
+.admin-actions{
+    display:flex;
+    align-items:center;
+    gap:15px;
+}
+
+.bell{
+    position:relative;
+    font-size:22px;
+    cursor:pointer;
+}
+
+.notif-count{
+    position:absolute;
+    top:-5px;
+    right:-10px;
+    background:red;
+    color:white;
+    font-size:12px;
+    padding:2px 6px;
+    border-radius:50%;
+}
+
+.notifications-panel{
+    position:absolute;
+    right:20px;
+    top:80px;
+    width:300px;
+    background:white;
+    border-radius:10px;
+    box-shadow:0 4px 15px rgba(0,0,0,0.2);
+    display:none;
+    padding:10px;
+    z-index:1000;
+}
 </style>
 
 </head>
@@ -162,11 +198,20 @@ hr{
 
 <!-- HEADER -->
 <div class="admin-header">
+<div id="notificationsPanel" class="notifications-panel"></div>
     <div>
         <h1>Admin Panel</h1>
         <p id="adminName">Logged in as: admin</p>
     </div>
-    <button onclick="logout()">Logout</button>
+
+    <div class="admin-actions">
+        <div class="bell" onclick="toggleNotifications()">
+            🔔 <span id="notifCount" class="notif-count">0</span>
+        </div>
+
+        <button onclick="logout()">Logout</button>
+    </div>
+
 </div>
 
 <!-- USERS -->

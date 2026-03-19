@@ -88,6 +88,11 @@ function openDrawer(userId, email){
     loadDrawerTasks(userId);
     loadDrawerJobs(userId);   // 🔥 ADD THIS
 }
+
+function closeDrawer(){
+    document.getElementById("workDrawer").classList.remove("active");
+}
+
 // ==========================
 // LOAD DRAWER TASKS
 // ==========================
@@ -307,8 +312,51 @@ async function loadDrawerJobs(userId){
         `;
     });
 }
+
+async function loadAdminNotifications(){
+
+    const response = await fetch(
+        "https://dev-tracker-yfvj.onrender.com/tasks/notifications",
+        {
+            headers:{
+                "Authorization": `Bearer ${token}`
+            }
+        }
+    );
+
+    const result = await response.json();
+    const notifications = result.data || [];
+
+    const panel = document.getElementById("notificationsPanel");
+    const count = document.getElementById("notifCount");
+
+    panel.innerHTML = "";
+
+    count.innerText = notifications.length;
+
+    notifications.forEach(n => {
+        panel.innerHTML += `
+            <div class="notif-item">
+                ${n.message}
+            </div>
+        `;
+    });
+}
+
+function toggleNotifications(){
+    const panel = document.getElementById("notificationsPanel");
+
+    if(panel.style.display === "block"){
+        panel.style.display = "none";
+    } else {
+        panel.style.display = "block";
+    }
+}
 // ==========================
 // START
 // ==========================
 loadBoard();
 getCurrentUser();
+loadAdminNotifications();
+
+setInterval(loadAdminNotifications, 5000);
