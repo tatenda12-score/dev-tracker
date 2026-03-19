@@ -81,7 +81,7 @@ def start_task(
         return {"success": False, "message": "Task already started"}
 
     task.status = "In Progress"
-    task.start_time = datetime.now(timezone.utc)  # ✅ FIXED
+    task.start_time = datetime.now(timezone.utc)
 
     db.commit()
 
@@ -109,18 +109,19 @@ def complete_task(
         return {"success": False, "message": "Task not started yet"}
 
     task.status = "Completed"
-    task.end_time = datetime.now(timezone.utc)  # ✅ FIXED
+    task.end_time = datetime.now(timezone.utc)
 
-    # calculate duration safely
-    # normalize both datetimes
+    # ==========================
+    # SAFE TIME CALCULATION (PRODUCTION FIX)
+    # ==========================
     start = task.start_time
     end = task.end_time
 
     if start.tzinfo is None:
-       start = start.replace(tzinfo=timezone.utc)
+        start = start.replace(tzinfo=timezone.utc)
 
-    if end.tzinfo is None: 
-      end = end.replace(tzinfo=timezone.utc)
+    if end.tzinfo is None:
+        end = end.replace(tzinfo=timezone.utc)
 
     task.time_taken = (end - start).total_seconds()
 
@@ -133,7 +134,8 @@ def complete_task(
         notification = models.Notification(
             message=f"{current_user.name} completed task: {task.title}",
             user_id=admin.id,
-            sender_id=current_user.id
+            sender_id=current_user.id,
+            is_read=False   # 🔥 ensure unread
         )
         db.add(notification)
 
@@ -166,10 +168,12 @@ def assign_task(
     db.commit()
     db.refresh(new_task)
 
+    # 🔔 notify user
     notification = models.Notification(
         message=f"New task assigned: {data['title']}",
         user_id=data["owner_id"],
-        sender_id=current_user.id
+        sender_id=current_user.id,
+        is_read=False
     )
 
     db.add(notification)
@@ -179,7 +183,7 @@ def assign_task(
 
 
 # ==========================
-# GET NOTIFICATIONS
+# GET NOTIFICATIONS (UNREAD ONLY)
 # ==========================
 @router.get("/notifications")
 def get_notifications(
@@ -187,7 +191,10 @@ def get_notifications(
     current_user: models.User = Depends(get_current_user)
 ):
     notifications = db.query(models.Notification)\
-        .filter(models.Notification.user_id == current_user.id)\
+        .filter(
+            models.Notification.user_id == current_user.id,
+            models.Notification.is_read == False
+        )\
         .order_by(models.Notification.created_at.desc())\
         .all()
 
@@ -195,3 +202,24 @@ def get_notifications(
         "success": True,
         "data": notifications
     }
+
+
+# ==========================
+# MARK NOTIFICATIONS AS READ
+# ==========================
+@router.put("/notifications/read")
+def mark_notifications_read(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    notifications = db.query(models.Notification).filter(
+        models.Notification.user_id == current_user.id,
+        models.Notification.is_read == False
+    ).all()
+
+    for n in notifications:
+        n.is_read = True
+
+    db.commit()
+
+    return {"success": True, "message": "Notifications marked as read"}
