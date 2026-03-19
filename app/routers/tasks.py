@@ -27,9 +27,22 @@ def get_my_tasks(
         .all()
 
     return {
-        "success": True,
-        "data": tasks
-    }
+    "success": True,
+    "data": [
+        {
+            "id": t.id,
+            "title": t.title,
+            "description": t.description,
+            "status": t.status,
+            "created_at": t.created_at.isoformat() if t.created_at else None,
+            "start_time": t.start_time.isoformat() if t.start_time else None,
+            "end_time": t.end_time.isoformat() if t.end_time else None,
+            "time_taken": t.time_taken,
+            "github_link": t.github_link  # ✅ ADD THIS
+        }
+        for t in tasks
+    ]
+}
 
 
 # ==========================
@@ -49,6 +62,7 @@ def get_tasks_for_user(user_id: int, db: Session = Depends(get_db)):
                 "id": t.id,
                 "title": t.title,
                 "description": t.description,
+                "github_link": t.github_link,
                 "status": t.status,
                 "created_at": t.created_at.isoformat() if t.created_at else None,
                 "start_time": t.start_time.isoformat() if t.start_time else None,
@@ -161,7 +175,9 @@ def assign_task(
         description=data["description"],
         owner_id=data["owner_id"],
         assigned_by_id=current_user.id,
-        status="Pending"
+        status="Pending",  # ✅ FIXED (comma added)
+
+        github_link=data.get("github_link")  # ✅ ADDED PROPERLY
     )
 
     db.add(new_task)

@@ -110,10 +110,17 @@ async function loadTasks() {
             ? (task.time_taken / 60).toFixed(2) + " min"
             : "0 min";
 
+        // ✅ Safe GitHub link handling
+        const githubLink = task.github_link && task.github_link.trim() !== ""
+            ? `<p>🔗 <a href="${task.github_link}" target="_blank">View GitHub Repo</a></p>`
+            : "";
+
         container.innerHTML += `
             <div class="task-card ${task.status === "In Progress" ? "active-task" : ""}">
                 <h4>${task.title}</h4>
                 <p>${task.description}</p>
+
+                ${githubLink}
 
                 <p><strong>Status:</strong> ${task.status}</p>
 
@@ -137,7 +144,6 @@ async function loadTasks() {
         `;
     });
 }
-
 
 // ================= JOB CARDS =================
 async function loadJobCards(){

@@ -159,6 +159,7 @@ async function assignTask(){
 
     const title = document.getElementById("taskTitle").value;
     const description = document.getElementById("taskDescription").value;
+    const github = document.getElementById("taskGithub").value;
 
     if(!title || !description || !selectedUserId){
         alert("Fill all fields and select user");
@@ -172,10 +173,11 @@ async function assignTask(){
             "Content-Type":"application/json",
             "Authorization":`Bearer ${token}`
         },
-        body:JSON.stringify({
+        body: JSON.stringify({
             title,
-            description,
-            owner_id:selectedUserId
+            escription,
+            owner_id: selectedUserId,
+            github_link: github || null
         })
     });
 
@@ -192,6 +194,7 @@ async function createJobCard(){
 
     const title = document.getElementById("jobTitle").value;
     const description = document.getElementById("jobDescription").value;
+    const github = document.getElementById("jobGithub").value;
 
     if(!title || !description || !selectedUserId){
         alert("Fill all fields and select user");
@@ -205,10 +208,11 @@ async function createJobCard(){
             "Content-Type":"application/json",
             "Authorization":`Bearer ${token}`
         },
-        body:JSON.stringify({
+        body: JSON.stringify({
             title,
             description,
-            owner_id:selectedUserId
+            owner_id: selectedUserId,
+            github_link: github || null
         })
     });
 

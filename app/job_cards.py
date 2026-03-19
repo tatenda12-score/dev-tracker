@@ -57,7 +57,8 @@ def create_job_card(
         owner_id=data["owner_id"],
         assigned_by_id=current_user.id,
         status="Pending",
-        created_at=datetime.now(timezone.utc)  # ✅ FIXED
+
+        github_link=data.get("github_link")  # ✅ FIXED
     )
 
     db.add(job)
@@ -72,8 +73,6 @@ def create_job_card(
             "title": job.title
         }
     }
-
-
 # ==========================
 # OPEN JOB CARD (USER)
 # ==========================
