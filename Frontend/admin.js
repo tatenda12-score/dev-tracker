@@ -263,10 +263,13 @@ async function loadDrawerJobs(userId){
     });
 
     const result = await response.json();
-    const jobs = result.data || [];
+
+    const jobs = result.data?.items || result.data || [];
 
     const container = document.getElementById("drawerJobList");
     container.innerHTML = "";
+
+    console.log("Jobs:", jobs); // 🔍 DEBUG
 
     jobs
     .filter(j => j.owner_id === userId)
@@ -304,7 +307,6 @@ async function loadDrawerJobs(userId){
         `;
     });
 }
-
 // ==========================
 // START
 // ==========================
