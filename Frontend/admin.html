@@ -137,6 +137,23 @@ hr{
     overflow-y: auto;   /* ✅ SCROLL FIX */
 }
 
+.tabs {
+    display:flex;
+    margin-bottom:15px;
+}
+
+.tabs button {
+    flex:1;
+    padding:10px;
+    border:none;
+    cursor:pointer;
+    background:#eee;
+}
+
+.tabs button.active {
+    background:#1b263b;
+    color:white;
+}
 </style>
 
 </head>
@@ -173,10 +190,19 @@ hr{
         <div class="drawer-body">
 
             <!-- LEFT -->
-            <div class="drawer-left">
-                <h3>Task History</h3>
-                <div id="drawerTaskList"></div>
-            </div>
+<div class="drawer-left">
+
+    <!-- TABS -->
+    <div class="tabs">
+        <button onclick="showDrawerTab('tasks')" id="tabTasks" class="active">Tasks</button>
+        <button onclick="showDrawerTab('jobs')" id="tabJobs">Job Cards</button>
+    </div>
+
+    <!-- CONTENT -->
+    <div id="drawerTaskList"></div>
+    <div id="drawerJobList" style="display:none;"></div>
+
+</div>
 
             <!-- RIGHT -->
             <div class="drawer-right">

@@ -83,17 +83,11 @@ function openDrawer(userId, email){
     document.getElementById("drawerUserTitle").innerText =
         "Work for " + email;
 
-    // ✅ FIXED: FORCE SHOW
     document.getElementById("workDrawer").style.display = "block";
 
     loadDrawerTasks(userId);
+    loadDrawerJobs(userId);   // 🔥 ADD THIS
 }
-
-function closeDrawer(){
-    document.getElementById("workDrawer").style.display = "none";
-}
-
-
 // ==========================
 // LOAD DRAWER TASKS
 // ==========================
@@ -237,6 +231,79 @@ function logout(){
     window.location.href = "login.html";
 }
 
+function showDrawerTab(tab){
+
+    const taskList = document.getElementById("drawerTaskList");
+    const jobList = document.getElementById("drawerJobList");
+
+    const tabTasks = document.getElementById("tabTasks");
+    const tabJobs = document.getElementById("tabJobs");
+
+    if(tab === "tasks"){
+        taskList.style.display = "block";
+        jobList.style.display = "none";
+
+        tabTasks.classList.add("active");
+        tabJobs.classList.remove("active");
+
+    } else {
+        taskList.style.display = "none";
+        jobList.style.display = "block";
+
+        tabTasks.classList.remove("active");
+        tabJobs.classList.add("active");
+    }
+}
+
+async function loadDrawerJobs(userId){
+
+    const response = await fetch(
+        `https://dev-tracker-yfvj.onrender.com/job-cards/`, {
+        headers:{ "Authorization": `Bearer ${token}` }
+    });
+
+    const result = await response.json();
+    const jobs = result.data || [];
+
+    const container = document.getElementById("drawerJobList");
+    container.innerHTML = "";
+
+    jobs
+    .filter(j => j.owner_id === userId)
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .forEach(job => {
+
+        const assigned = job.created_at
+            ? new Date(job.created_at).toLocaleString()
+            : "N/A";
+
+        const opened = job.opened_at
+            ? new Date(job.opened_at).toLocaleString()
+            : "Not started";
+
+        const closed = job.closed_at
+            ? new Date(job.closed_at).toLocaleString()
+            : "Not completed";
+
+        const duration = job.duration
+            ? (job.duration / 60).toFixed(2) + " min"
+            : "0 min";
+
+        container.innerHTML += `
+            <div class="task-card">
+                <h4>${job.title}</h4>
+                <p>${job.description}</p>
+
+                <p><strong>Status:</strong> ${job.status}</p>
+
+                <p>📅 Assigned: ${assigned}</p>
+                <p>▶ Started: ${opened}</p>
+                <p>✅ Closed: ${closed}</p>
+                <p>⏱ Duration: ${duration}</p>
+            </div>
+        `;
+    });
+}
 
 // ==========================
 // START
