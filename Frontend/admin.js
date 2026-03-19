@@ -175,7 +175,7 @@ async function assignTask(){
         },
         body: JSON.stringify({
             title,
-            escription,
+            description,
             owner_id: selectedUserId,
             github_link: github || null
         })
