@@ -90,8 +90,14 @@ function openDrawer(userId, email){
 }
 
 function closeDrawer(){
-    document.getElementById("workDrawer").classList.remove("active");
+    document.getElementById("workDrawer").style.display = "none";
 }
+
+document.getElementById("workDrawer").addEventListener("click", function(e){
+    if(e.target.id === "workDrawer"){
+        closeDrawer();
+    }
+});
 
 // ==========================
 // LOAD DRAWER TASKS
