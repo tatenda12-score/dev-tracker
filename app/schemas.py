@@ -1,8 +1,15 @@
 from pydantic import BaseModel, EmailStr
+from typing import Optional, Generic, TypeVar, List
+from datetime import datetime
+from pydantic.generics import GenericModel
 
+
+# ==========================
+# 🔹 USER SCHEMAS
+# ==========================
 class UserCreate(BaseModel):
     name: str
-    email: str
+    email: EmailStr
     password: str
 
 
@@ -10,56 +17,7 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
-from pydantic import BaseModel
-from typing import Optional
-from datetime import datetime
 
-class TaskBase(BaseModel):
-    title: str
-    description: Optional[str] = None
-    github_link: Optional[str] = None
-    hours_spent: int
-    
-    
-
-class TaskCreate(TaskBase):
-    pass
-
-class TaskResponse(TaskBase):
-    id: int
-    completed_at: datetime
-    owner_id: int
-
-    class Config:
-     from_attributes = True
-     
-from typing import Generic, TypeVar, List
-from pydantic import BaseModel
-from pydantic.generics import GenericModel
-
-T = TypeVar("T")
-
-
-# Standard API Response Wrapper
-class BaseResponse(GenericModel, Generic[T]):
-    success: bool
-    data: T
-    message: str
-
-
-# Pagination Data Wrapper
-class PaginationMeta(BaseModel):
-    total: int
-    skip: int
-    limit: int
-
-
-class PaginatedData(GenericModel, Generic[T]):
-    items: List[T]
-    total: int
-    skip: int
-    limit: int
-    
 class UserOut(BaseModel):
     id: int
     name: str
@@ -70,14 +28,105 @@ class UserOut(BaseModel):
         from_attributes = True
 
 
-class TaskOut(BaseModel):
-    id: int
+# ==========================
+# 🔹 TASK SCHEMAS
+# ==========================
+class TaskBase(BaseModel):
     title: str
-    description: str
-    hours_spent: int
-    github_link: Optional[str]
-    completed_at: datetime
+    description: Optional[str] = None
+    github_link: Optional[str] = None
+    hours_spent: Optional[float] = 0
+
+
+class TaskCreate(TaskBase):
     owner_id: int
+
+
+class TaskOut(TaskBase):
+    id: int
+    status: str
+    owner_id: int
+    assigned_by_id: int
+
+    created_at: Optional[datetime]
+    start_time: Optional[datetime]
+    end_time: Optional[datetime]
+    completed_at: Optional[datetime]
+
+    time_taken: Optional[float]
 
     class Config:
         from_attributes = True
+
+
+# ==========================
+# 🔹 JOB CARD SCHEMAS
+# ==========================
+class JobCardBase(BaseModel):
+    title: str
+    description: Optional[str] = None
+    github_link: Optional[str] = None
+
+
+class JobCardCreate(JobCardBase):
+    owner_id: int
+
+
+class JobCardOut(JobCardBase):
+    id: int
+    status: str
+    owner_id: int
+    assigned_by_id: int
+
+    created_at: Optional[datetime]
+    opened_at: Optional[datetime]
+    closed_at: Optional[datetime]
+
+    duration: Optional[float]
+
+    class Config:
+        from_attributes = True
+
+
+# ==========================
+# 🔹 JOB UPDATE SCHEMA
+# ==========================
+class JobUpdateOut(BaseModel):
+    id: int
+    message: str
+    created_at: Optional[datetime]
+
+    class Config:
+        from_attributes = True
+
+
+# ==========================
+# 🔹 NOTIFICATION SCHEMA
+# ==========================
+class NotificationOut(BaseModel):
+    id: int
+    message: str
+    is_read: bool
+    created_at: Optional[datetime]
+
+    class Config:
+        from_attributes = True
+
+
+# ==========================
+# 🔹 GENERIC RESPONSE SYSTEM
+# ==========================
+T = TypeVar("T")
+
+
+class BaseResponse(GenericModel, Generic[T]):
+    success: bool
+    data: Optional[T]
+    message: str
+
+
+class PaginatedData(GenericModel, Generic[T]):
+    items: List[T]
+    total: int
+    skip: int
+    limit: int

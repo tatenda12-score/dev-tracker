@@ -3,138 +3,238 @@
 <head>
     <title>Dashboard</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
-        .main-layout{
+        body{
+            margin:0;
+            font-family:'Segoe UI',sans-serif;
+            background:#f5f6fa;
+        }
+
+        .layout{
             display:flex;
         }
 
-        /* RIGHT SIDEBAR */
+        /* SIDEBAR */
         .sidebar{
-            width:200px;
+            width:220px;
             background:#0d1b2a;
-            padding:20px;
+            color:white;
             height:100vh;
-            position:fixed;
-            right:0;
-            top:0;
+            padding:20px;
         }
 
-        .sidebar button{
-            width:100%;
-            padding:12px;
-            margin-bottom:10px;
-            background:#1b263b;
-            color:white;
-            border:none;
+        .sidebar h2{
+            margin-bottom:30px;
+        }
+
+        .sidebar ul{
+            list-style:none;
+            padding:0;
+        }
+
+        .sidebar li{
+            margin:15px 0;
             cursor:pointer;
-            border-radius:6px;
         }
 
-        .sidebar button:hover{
-            background:#415a77;
+        /* MAIN */
+        .main{
+            flex:1;
+            padding:20px;
         }
 
-        /* MAIN CONTAINER */
-        .container{
-            margin:120px auto 40px auto;
-            margin-right:240px;
+        /* KPI */
+        .kpi{
+            display:grid;
+            grid-template-columns:repeat(4,1fr);
+            gap:20px;
+        }
 
-            width:60%;
-            min-width:600px;
-            max-width:900px;
-
+        .card{
             background:white;
-            padding:30px;
-            border-radius:16px;
-            box-shadow:0 6px 20px rgba(0,0,0,0.15);
+            padding:20px;
+            border-radius:12px;
         }
 
-        /* 🔔 ALERT BOX */
-        #jobAlert{
-            display:none;
-            background:#ff4d4d;
-            color:white;
-            padding:12px;
-            border-radius:8px;
-            margin-bottom:15px;
+        .card .number{
+            font-size:28px;
             font-weight:bold;
         }
 
-        /* 🔥 NEW JOB HIGHLIGHT */
-        .new-job{
-            border-left:6px solid red;
-            animation:pulse 1s infinite;
+        /* CHARTS */
+        .charts{
+            display:grid;
+            grid-template-columns:2fr 1fr;
+            gap:20px;
+            margin-top:30px;
         }
 
-        @keyframes pulse{
-            0%{ transform:scale(1); }
-            50%{ transform:scale(1.01); }
-            100%{ transform:scale(1); }
+        .chart-box{
+            background:white;
+            padding:20px;
+            border-radius:12px;
         }
 
+        /* TABLE */
+        .table-box{
+            background:white;
+            padding:20px;
+            border-radius:12px;
+            margin-top:30px;
+        }
+
+        table{
+            width:100%;
+            border-collapse:collapse;
+        }
+
+        th, td{
+            padding:12px;
+            text-align:left;
+        }
+
+        th{
+            border-bottom:1px solid #ddd;
+        }
+
+        /* STATUS BADGES */
+        .badge{
+            padding:5px 10px;
+            border-radius:6px;
+            color:white;
+            font-size:12px;
+        }
+
+        .pending{ background:gray; }
+        .progress{ background:orange; }
+        .completed{ background:green; }
+
+        /* BUTTONS */
+        .btn{
+            padding:6px 10px;
+            border:none;
+            border-radius:6px;
+            cursor:pointer;
+            color:white;
+        }
+
+        .btn-start{ background:orange; }
+        .btn-view{ background:green; }
+        .btn-update{ background:blue; }
+
+        /* PERFORMANCE */
+        .performance{
+            background:white;
+            padding:20px;
+            border-radius:12px;
+            margin-top:30px;
+            display:flex;
+            justify-content:space-between;
+        }
     </style>
-
 </head>
 
-<body>
+<body class="dashboard-page">
 
-    <!-- USER PANEL -->
-    <div class="user-panel">
-        <div class="user-info">
-            <span id="userInfo"></span>
+<div class="layout">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+    <h2>BlitzTech</h2>
+    <ul>
+        <li onclick="scrollToSection('dashboard')">My Dashboard</li>
+        <li onclick="scrollToSection('tasks')">My Tasks</li>
+        <li onclick="scrollToSection('jobs')">My Job Cards</li>
+        <li onclick="scrollToSection('performance')">Performance</li>
+    </ul>
+</div>
+
+    <!-- MAIN -->
+    <div class="main">
+
+        <h1>Technician Dashboard</h1>
+
+        <!-- KPI -->
+        <div class="kpi">
+            <div class="card">
+                <h3>Assigned Tasks</h3>
+                <p class="number" id="assignedTasks">0</p>
+            </div>
+
+            <div class="card">
+                <h3>Completed</h3>
+                <p class="number" id="completedTasks">0</p>
+            </div>
+
+            <div class="card">
+                <h3>In Progress</h3>
+                <p class="number" id="inProgressTasks">0</p>
+            </div>
+
+            <div class="card">
+                <h3>Hours Worked</h3>
+                <p class="number" id="hoursWorked">0h</p>
+            </div>
         </div>
 
-        <button class="logout-btn" onclick="logout()">Logout</button>
+        <!-- CHARTS -->
+        <div class="charts">
+            <div class="chart-box">
+                <h3>Weekly Productivity</h3>
+                <canvas id="barChart"></canvas>
+            </div>
+
+            <div class="chart-box">
+                <h3>Task Status Breakdown</h3>
+                <canvas id="pieChart"></canvas>
+            </div>
+        </div>
+
+        <!-- TASKS -->
+        <div class="table-box">
+            <h3>My Tasks</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Task</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="tasksTable"></tbody>
+            </table>
+        </div>
+
+        <!-- JOBS -->
+        <div class="table-box">
+            <h3>My Job Cards</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Service</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="jobsTable"></tbody>
+            </table>
+        </div>
+
+        <!-- PERFORMANCE -->
+        <div class="performance">
+            <p>Tasks Completed: <strong id="perfCompleted">0</strong></p>
+            <p>Avg Time per Task: <strong id="avgTime">0 hrs</strong></p>
+            <p>Efficiency: <strong id="efficiency">0%</strong></p>
+        </div>
+
     </div>
 
-    <div class="main-layout">
+</div>
 
-        <!-- SIDEBAR -->
-        <div class="sidebar">
-            <button onclick="showSection('tasks')">My Tasks</button>
-            <button onclick="showSection('jobs')">My Job Cards</button>
-        </div>
-
-        <!-- MAIN CONTENT -->
-        <div class="container">
-
-            <!-- HEADER -->
-            <div class="top-bar">
-                <div class="brand">
-                    <h2>My Dashboard</h2>
-                    <h3 class="company-name">Blitztech Electronics</h3>
-                </div>
-            </div>
-
-            <!-- 🔔 JOB ALERT -->
-            <div id="jobAlert">
-                🔔 New Job Assigned! Please start it.
-            </div>
-
-            <!-- NOTIFICATIONS -->
-            <h3>Notifications</h3>
-            <div id="notifications"></div>
-
-            <!-- TASKS -->
-            <div id="tasksSection">
-                <h3>My Tasks</h3>
-                <div id="tasks"></div>
-            </div>
-
-            <!-- JOB CARDS -->
-            <div id="jobsSection" style="display:none;">
-                <h3>My Job Cards</h3>
-                <div id="jobCards"></div>
-            </div>
-
-        </div>
-
-    </div>
-
-    <!-- SCRIPTS -->
-    <script src="api.js"></script>
-    <script src="dashboard.js"></script>
+<script src="api.js"></script>
+<script src="dashboard.js"></script>
 
 </body>
 </html>

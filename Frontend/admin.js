@@ -1,396 +1,229 @@
+// ==========================
+// 🔥 API CONFIG
+// ==========================
+const API = "https://dev-tracker-yfvj.onrender.com";
 const token = localStorage.getItem("token");
 
-let selectedUserId = null;
-let selectedUserEmail = null;
-
 
 // ==========================
-// LOAD KPI DASHBOARD
+// 🔥 API HELPER
 // ==========================
-async function loadBoard(){
-
-    const response = await fetch("https://dev-tracker-yfvj.onrender.com/users/", {
-        headers:{ "Authorization": `Bearer ${token}` }
-    });
-
-    const result = await response.json();
-    const users = result.data?.items || result.data || [];
-
-    const container = document.getElementById("usersContainer");
-    container.innerHTML = "";
-
-    for (const user of users) {
-
-        if (user.role === "ADMIN") continue;
-
-        const res = await fetch(
-            `https://dev-tracker-yfvj.onrender.com/tasks/user/${user.id}`, {
-            headers:{ "Authorization": `Bearer ${token}` }
+async function apiRequest(endpoint, method = "GET", data = null) {
+    try {
+        const res = await fetch(API + endpoint, {
+            method,
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
+            body: data ? JSON.stringify(data) : null
         });
 
-        const taskData = await res.json();
-        const tasks = taskData.data || [];
-
-        const totalTasks = tasks.length;
-
-        const completedTasks = tasks.filter(t => t.status === "Completed");
-        const completedCount = completedTasks.length;
-
-        let avgTime = 0;
-        if (completedCount > 0) {
-            const totalTime = completedTasks.reduce(
-                (sum, t) => sum + (t.time_taken || 0), 0
-            );
-            avgTime = (totalTime / completedCount) / 60;
+        if (res.status === 401) {
+            alert("Session expired. Login again.");
+            logout();
+            return null;
         }
 
-        const performance = totalTasks > 0
-            ? Math.round((completedCount / totalTasks) * 100)
-            : 0;
+        return await res.json();
 
-        const card = document.createElement("div");
-        card.className = "userColumn";
-
-        card.innerHTML = `
-            <h3>${user.name}</h3>
-            <p>✔ Completed: ${completedCount}</p>
-            <p>⏱ Avg Time: ${avgTime.toFixed(2)} min</p>
-            <p>📊 Performance: ${performance}%</p>
-
-            <button class="manage-btn">
-                Manage Work
-            </button>
-        `;
-
-        // ✅ SAFE EVENT LISTENER (fixes CSP issue)
-        card.querySelector(".manage-btn").addEventListener("click", () => {
-            openDrawer(user.id, user.name);
-        });
-
-        container.appendChild(card);
+    } catch (err) {
+        console.error("API Error:", err);
+        alert("Network error");
+        return null;
     }
 }
 
 
 // ==========================
-// DRAWER FUNCTIONS
+// 👤 USER INFO
 // ==========================
-function openDrawer(userId, email){
+async function getCurrentUser() {
+    const res = await apiRequest("/auth/me");
 
-    selectedUserId = userId;
-    selectedUserEmail = email;
-
-    document.getElementById("drawerUserTitle").innerText =
-        "Work for " + email;
-
-    document.getElementById("workDrawer").style.display = "block";
-
-    loadDrawerTasks(userId);
-    loadDrawerJobs(userId);   // 🔥 ADD THIS
+    document.getElementById("adminName").innerText =
+        "Logged in as: " + (res?.data?.name || "Admin");
 }
 
-function closeDrawer(){
-    document.getElementById("workDrawer").style.display = "none";
+
+// ==========================
+// 📊 KPI DASHBOARD
+// ==========================
+async function loadAdminKPIs() {
+
+    const tasksRes = await apiRequest("/tasks/");
+    const jobsRes = await apiRequest("/job-cards/");
+
+    const tasks = tasksRes?.data || [];
+    const jobs = jobsRes?.data || [];
+
+    document.getElementById("totalJobs").innerText = jobs.length;
+
+    document.getElementById("activeTasks").innerText =
+        tasks.filter(t => t.status === "In Progress").length;
+
+    document.getElementById("completedTasks").innerText =
+        tasks.filter(t => t.status === "Completed").length;
+
+    document.getElementById("overdueTasks").innerText =
+        tasks.filter(t => t.status === "Pending").length;
 }
 
-document.getElementById("workDrawer").addEventListener("click", function(e){
-    if(e.target.id === "workDrawer"){
-        closeDrawer();
-    }
-});
 
 // ==========================
-// LOAD DRAWER TASKS
+// 🔔 NOTIFICATIONS
 // ==========================
-async function loadDrawerTasks(userId){
+async function loadAdminNotifications(){
 
-    const response = await fetch(
-        `https://dev-tracker-yfvj.onrender.com/tasks/user/${userId}`, {
-        headers:{ "Authorization": `Bearer ${token}` }
-    });
+    const panel = document.getElementById("notificationsPanel");
+    if (!panel) return;
 
-    const result = await response.json();
-    const tasks = result.data || [];
+    const response = await apiRequest("/tasks/notifications");
+    const notifications = response?.data || [];
 
-    const container = document.getElementById("drawerTaskList");
-    container.innerHTML = "";
+    panel.innerHTML = "";
 
-    tasks
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-    .forEach(task => {
-
-        const assigned = task.created_at
-            ? new Date(task.created_at).toLocaleString()
-            : "N/A";
-
-        const started = task.start_time
-            ? new Date(task.start_time).toLocaleString()
-            : "Not started";
-
-        const completed = task.end_time
-            ? new Date(task.end_time).toLocaleString()
-            : "Not completed";
-
-        const duration = task.time_taken
-            ? (task.time_taken / 60).toFixed(2) + " min"
-            : "0 min";
-
-        container.innerHTML += `
-            <div class="task-card">
-                <h4>${task.title}</h4>
-                <p>${task.description}</p>
-
-                <p><strong>Status:</strong> ${task.status}</p>
-
-                <p>📅 Assigned: ${assigned}</p>
-                <p>▶ Started: ${started}</p>
-                <p>✅ Completed: ${completed}</p>
-                <p>⏱ Duration: ${duration}</p>
-            </div>
-        `;
+    notifications.forEach(n => {
+        panel.innerHTML += `<div class="notif-item">${n.message}</div>`;
     });
 }
 
+async function toggleNotifications() {
 
-// ==========================
-// ASSIGN TASK
-// ==========================
-async function assignTask(){
+    const panel = document.getElementById("notificationsPanel");
 
-    const title = document.getElementById("taskTitle").value;
-    const description = document.getElementById("taskDescription").value;
-    const github = document.getElementById("taskGithub").value;
-
-    if(!title || !description || !selectedUserId){
-        alert("Fill all fields and select user");
+    if (panel.style.display === "block") {
+        panel.style.display = "none";
         return;
     }
 
-    await fetch(
-        "https://dev-tracker-yfvj.onrender.com/tasks/assign-task",{
-        method:"POST",
-        headers:{
-            "Content-Type":"application/json",
-            "Authorization":`Bearer ${token}`
-        },
-        body: JSON.stringify({
-            title,
-            description,
-            owner_id: selectedUserId,
-            github_link: github || null
-        })
+    panel.style.display = "block";
+
+    await apiRequest("/tasks/notifications/read", "PUT");
+
+    document.getElementById("notifCount").innerText = 0;
+    loadAdminNotifications();
+}
+
+
+// ==========================
+// 📝 ASSIGN TASK MODAL
+// ==========================
+function openAssignModal(){
+    document.getElementById("assignModal").style.display = "block";
+    loadUsersForDropdown();
+}
+
+function closeAssignModal(){
+    document.getElementById("assignModal").style.display = "none";
+}
+
+async function loadUsersForDropdown(){
+
+    const res = await apiRequest("/users/");
+    const users = res?.data || [];
+
+    const select = document.getElementById("taskUser");
+    select.innerHTML = "";
+
+    users.forEach(u => {
+        if(u.role !== "ADMIN"){
+            select.innerHTML += `<option value="${u.id}">${u.name}</option>`;
+        }
+    });
+}
+
+async function submitTask(){
+
+    const title = document.getElementById("taskTitle").value;
+    const description = document.getElementById("taskDescription").value;
+    const owner_id = document.getElementById("taskUser").value;
+
+    if(!title || !description){
+        alert("Fill all fields");
+        return;
+    }
+
+    await apiRequest("/tasks/assign-task", "POST", {
+        title,
+        description,
+        owner_id: parseInt(owner_id)
     });
 
     alert("Task assigned successfully");
 
-    loadDrawerTasks(selectedUserId);
+    closeAssignModal();
+    loadAdminKPIs();
 }
 
 
 // ==========================
-// CREATE JOB CARD
+// 🧰 CREATE JOB MODAL
 // ==========================
-async function createJobCard(){
+function openJobModal(){
+    document.getElementById("jobModal").style.display = "block";
+    loadUsersForJobDropdown();
+}
 
-    const title = document.getElementById("jobTitle").value;
+function closeJobModal(){
+    document.getElementById("jobModal").style.display = "none";
+}
+
+async function loadUsersForJobDropdown(){
+
+    const res = await apiRequest("/users/");
+    const users = res?.data || [];
+
+    const select = document.getElementById("jobUser");
+    select.innerHTML = "";
+
+    users.forEach(u => {
+        if(u.role !== "ADMIN"){
+            select.innerHTML += `<option value="${u.id}">${u.name}</option>`;
+        }
+    });
+}
+
+async function submitJob(){
+
+    const title = document.getElementById("jobService").value;
     const description = document.getElementById("jobDescription").value;
-    const github = document.getElementById("jobGithub").value;
+    const owner_id = document.getElementById("jobUser").value;
 
-    if(!title || !description || !selectedUserId){
-        alert("Fill all fields and select user");
+    const customer = document.getElementById("jobCustomer").value;
+    const contact = document.getElementById("jobContact").value;
+
+    if(!title || !description || !owner_id){
+        alert("Fill all required fields");
         return;
     }
 
-    await fetch(
-        "https://dev-tracker-yfvj.onrender.com/job-cards/",{
-        method:"POST",
-        headers:{
-            "Content-Type":"application/json",
-            "Authorization":`Bearer ${token}`
-        },
-        body: JSON.stringify({
-            title,
-            description,
-            owner_id: selectedUserId,
-            github_link: github || null
-        })
+    await apiRequest("/job-cards/", "POST", {
+        title: `${title} - ${customer}`,
+        description: `${description} | Contact: ${contact}`,
+        owner_id: parseInt(owner_id)
     });
 
-    alert("Job card created successfully");
+    alert("Job created successfully");
 
-    loadDrawerTasks(selectedUserId);
+    closeJobModal();
+    loadAdminKPIs();
 }
 
 
 // ==========================
-// ADMIN NAME
+// 🚪 LOGOUT
 // ==========================
-async function getCurrentUser(){
-
-    const response = await fetch("https://dev-tracker-yfvj.onrender.com/auth/me", {
-        headers:{ "Authorization": `Bearer ${token}` }
-    });
-
-    const user = await response.json();
-
-    document.getElementById("adminName").innerText =
-        "Logged in as: " + (user.data?.name || "Admin");
-}
-
-
-// ==========================
-// LOGOUT
-// ==========================
-function logout(){
+function logout() {
     localStorage.clear();
     window.location.href = "login.html";
 }
 
-function showDrawerTab(tab){
 
-    const taskList = document.getElementById("drawerTaskList");
-    const jobList = document.getElementById("drawerJobList");
-
-    const tabTasks = document.getElementById("tabTasks");
-    const tabJobs = document.getElementById("tabJobs");
-
-    if(tab === "tasks"){
-        taskList.style.display = "block";
-        jobList.style.display = "none";
-
-        tabTasks.classList.add("active");
-        tabJobs.classList.remove("active");
-
-    } else {
-        taskList.style.display = "none";
-        jobList.style.display = "block";
-
-        tabTasks.classList.remove("active");
-        tabJobs.classList.add("active");
-    }
-}
-
-async function loadDrawerJobs(userId){
-
-    const response = await fetch(
-        `https://dev-tracker-yfvj.onrender.com/job-cards/`, {
-        headers:{ "Authorization": `Bearer ${token}` }
-    });
-
-    const result = await response.json();
-
-    const jobs = result.data?.items || result.data || [];
-
-    const container = document.getElementById("drawerJobList");
-    container.innerHTML = "";
-
-    console.log("Jobs:", jobs); // 🔍 DEBUG
-
-    jobs
-    .filter(j => j.owner_id === userId)
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-    .forEach(job => {
-
-        const assigned = job.created_at
-            ? new Date(job.created_at).toLocaleString()
-            : "N/A";
-
-        const opened = job.opened_at
-            ? new Date(job.opened_at).toLocaleString()
-            : "Not started";
-
-        const closed = job.closed_at
-            ? new Date(job.closed_at).toLocaleString()
-            : "Not completed";
-
-        const duration = job.duration
-            ? (job.duration / 60).toFixed(2) + " min"
-            : "0 min";
-
-        container.innerHTML += `
-            <div class="task-card">
-                <h4>${job.title}</h4>
-                <p>${job.description}</p>
-
-                <p><strong>Status:</strong> ${job.status}</p>
-
-                <p>📅 Assigned: ${assigned}</p>
-                <p>▶ Started: ${opened}</p>
-                <p>✅ Closed: ${closed}</p>
-                <p>⏱ Duration: ${duration}</p>
-            </div>
-        `;
-    });
-}
-
-async function loadAdminNotifications(){
-
-    const response = await fetch(
-        "https://dev-tracker-yfvj.onrender.com/tasks/notifications",
-        {
-            headers:{
-                "Authorization": `Bearer ${token}`
-            }
-        }
-    );
-
-    const result = await response.json();
-    const notifications = result.data || [];
-
-    const panel = document.getElementById("notificationsPanel");
-    const count = document.getElementById("notifCount");
-
-    panel.innerHTML = "";
-
-    count.innerText = notifications.length;
-    if(notifications.length === 0){
-        panel.innerHTML = "<p style='padding:10px;'>No new notifications</p>";
-        return;
-    }
-
-    notifications.forEach(n => {
-        panel.innerHTML += `
-            <div class="notif-item">
-                ${n.message}
-            </div>
-        `;
-    });
-}
-
-async function toggleNotifications(){
-
-    const panel = document.getElementById("notificationsPanel");
-
-    if(panel.style.display === "block"){
-        panel.style.display = "none";
-    } else {
-        panel.style.display = "block";
-
-        // 🔥 mark as read in backend
-        await fetch(
-            "https://dev-tracker-yfvj.onrender.com/tasks/notifications/read",
-            {
-                method: "PUT",
-                headers: {
-                    "Authorization": `Bearer ${token}`
-                }
-            }
-        );
-
-        // 🔥 clear UI immediately
-        panel.innerHTML = "";
-
-        // 🔥 reset counter
-        document.getElementById("notifCount").innerText = 0;
-
-        // 🔥 reload clean state
-        loadAdminNotifications();
-    }
-}
 // ==========================
-// START
+// 🚀 START
 // ==========================
-loadBoard();
+loadAdminKPIs();
 getCurrentUser();
 loadAdminNotifications();
 

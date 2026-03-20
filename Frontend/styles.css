@@ -187,15 +187,40 @@ button:hover{
     left:0;
     width:100%;
     height:100%;
-    background:rgba(0,0,0,0.6);
+    background:rgba(0,0,0,0.5);
+    z-index:1000;
 }
 
-.modal-content{
+.modal-content.large{
     background:white;
-    padding:30px;
-    width:400px;
-    margin:150px auto;
-    border-radius:10px;
+    width:700px;
+    margin:80px auto;
+    padding:25px;
+    border-radius:12px;
+}
+
+.modal-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.close-btn{
+    cursor:pointer;
+    font-size:22px;
+}
+
+.form-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+    margin:20px 0;
+}
+
+.modal-footer{
+    display:flex;
+    justify-content:flex-end;
+    gap:10px;
 }
 
 /* Video Background (Login Only) */
@@ -397,4 +422,153 @@ button:hover{
 
 .task-card a:hover{
     text-decoration:underline;
+}
+
+/* ========================= */
+/* DASHBOARD (SAFE ADDITIONS) */
+/* ========================= */
+
+/* Prevent container conflicts */
+.dashboard-page .container {
+    width: auto;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+/* Layout */
+.dashboard-layout {
+    display: flex;
+}
+
+/* Sidebar */
+.dashboard-sidebar {
+    width: 220px;
+    background: #0d1b2a;
+    color: white;
+    height: 100vh;
+    padding: 20px;
+}
+
+.dashboard-sidebar h2 {
+    margin-bottom: 30px;
+}
+
+.dashboard-sidebar li {
+    margin: 15px 0;
+    cursor: pointer;
+}
+
+/* Main */
+.dashboard-main {
+    flex: 1;
+    padding: 20px;
+}
+
+/* KPI cards */
+.dashboard-kpi {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+}
+
+.dashboard-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+}
+
+.dashboard-card .number {
+    font-size: 28px;
+    font-weight: bold;
+}
+
+/* Charts */
+.dashboard-charts {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+    margin-top: 30px;
+}
+
+.dashboard-chart-box {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+}
+
+/* Tables */
+.dashboard-table-box {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    margin-top: 30px;
+}
+
+.dashboard-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.dashboard-table th,
+.dashboard-table td {
+    padding: 12px;
+    text-align: left;
+}
+
+.dashboard-table th {
+    border-bottom: 1px solid #ddd;
+}
+
+/* Status badges */
+.badge {
+    padding: 5px 10px;
+    border-radius: 6px;
+    color: white;
+    font-size: 12px;
+}
+
+.badge.pending { background: gray; }
+.badge.progress { background: orange; }
+.badge.completed { background: green; }
+
+/* Buttons */
+.btn {
+    padding: 6px 10px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    color: white;
+}
+
+.btn-start { background: orange; }
+.btn-update { background: blue; }
+.btn-view { background: green; }
+
+/* Performance */
+.dashboard-performance {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    margin-top: 30px;
+    display: flex;
+    justify-content: space-between;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+
+    .dashboard-kpi {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .dashboard-charts {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-sidebar {
+        display: none;
+    }
 }

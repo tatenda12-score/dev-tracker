@@ -5,12 +5,27 @@ from datetime import datetime, timezone
 from app.database import get_db
 from app import models
 from app.auth import get_current_user
-from app.models import Task
 
 router = APIRouter(
     prefix="/tasks",
     tags=["Tasks"]
 )
+
+# ==========================
+# 🔧 HELPER: SERIALIZE TASK
+# ==========================
+def serialize_task(t):
+    return {
+        "id": t.id,
+        "title": t.title,
+        "description": t.description,
+        "status": t.status,
+        "created_at": t.created_at.isoformat() if t.created_at else None,
+        "start_time": t.start_time.isoformat() if t.start_time else None,
+        "end_time": t.end_time.isoformat() if t.end_time else None,
+        "time_taken": t.time_taken,
+        "github_link": t.github_link
+    }
 
 
 # ==========================
@@ -27,50 +42,31 @@ def get_my_tasks(
         .all()
 
     return {
-    "success": True,
-    "data": [
-        {
-            "id": t.id,
-            "title": t.title,
-            "description": t.description,
-            "status": t.status,
-            "created_at": t.created_at.isoformat() if t.created_at else None,
-            "start_time": t.start_time.isoformat() if t.start_time else None,
-            "end_time": t.end_time.isoformat() if t.end_time else None,
-            "time_taken": t.time_taken,
-            "github_link": t.github_link  # ✅ ADD THIS
-        }
-        for t in tasks
-    ]
-}
+        "success": True,
+        "data": [serialize_task(t) for t in tasks]
+    }
 
 
 # ==========================
 # GET TASKS FOR USER (ADMIN)
 # ==========================
 @router.get("/user/{user_id}")
-def get_tasks_for_user(user_id: int, db: Session = Depends(get_db)):
+def get_tasks_for_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    if current_user.role != "ADMIN":
+        raise HTTPException(status_code=403, detail="Admin only")
 
-    tasks = db.query(models.Task).filter(
-        models.Task.owner_id == user_id
-    ).all()
+    tasks = db.query(models.Task)\
+        .filter(models.Task.owner_id == user_id)\
+        .order_by(models.Task.id.desc())\
+        .all()
 
     return {
         "success": True,
-        "data": [
-            {
-                "id": t.id,
-                "title": t.title,
-                "description": t.description,
-                "github_link": t.github_link,
-                "status": t.status,
-                "created_at": t.created_at.isoformat() if t.created_at else None,
-                "start_time": t.start_time.isoformat() if t.start_time else None,
-                "end_time": t.end_time.isoformat() if t.end_time else None,
-                "time_taken": t.time_taken
-            }
-            for t in tasks
-        ]
+        "data": [serialize_task(t) for t in tasks]
     }
 
 
@@ -90,6 +86,9 @@ def start_task(
 
     if task.owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not allowed")
+
+    if task.status == "Completed":
+        raise HTTPException(status_code=400, detail="Task already completed")
 
     if task.status == "In Progress":
         return {"success": False, "message": "Task already started"}
@@ -122,12 +121,13 @@ def complete_task(
     if not task.start_time:
         return {"success": False, "message": "Task not started yet"}
 
+    if task.status == "Completed":
+        return {"success": False, "message": "Task already completed"}
+
     task.status = "Completed"
     task.end_time = datetime.now(timezone.utc)
 
-    # ==========================
-    # SAFE TIME CALCULATION (PRODUCTION FIX)
-    # ==========================
+    # ✅ SAFE TIME CALCULATION
     start = task.start_time
     end = task.end_time
 
@@ -139,17 +139,16 @@ def complete_task(
 
     task.time_taken = (end - start).total_seconds()
 
-    # ==========================
-    # 🔔 NOTIFY ADMIN
-    # ==========================
-    admin_users = db.query(models.User).filter(models.User.role == "ADMIN").all()
+    # 🔔 NOTIFY ADMINS
+    admins = db.query(models.User).filter(models.User.role == "ADMIN").all()
 
-    for admin in admin_users:
+    for admin in admins:
         notification = models.Notification(
             message=f"{current_user.name} completed task: {task.title}",
             user_id=admin.id,
             sender_id=current_user.id,
-            is_read=False   # 🔥 ensure unread
+            is_read=False,
+            created_at=datetime.utcnow()
         )
         db.add(notification)
 
@@ -159,7 +158,7 @@ def complete_task(
 
 
 # ==========================
-# ASSIGN TASK (ADMIN ONLY)
+# ASSIGN TASK (ADMIN)
 # ==========================
 @router.post("/assign-task")
 def assign_task(
@@ -170,14 +169,20 @@ def assign_task(
     if current_user.role != "ADMIN":
         raise HTTPException(status_code=403, detail="Only admins can assign tasks")
 
-    new_task = models.Task(
-        title=data["title"],
-        description=data["description"],
-        owner_id=data["owner_id"],
-        assigned_by_id=current_user.id,
-        status="Pending",  # ✅ FIXED (comma added)
+    title = data.get("title")
+    owner_id = data.get("owner_id")
 
-        github_link=data.get("github_link")  # ✅ ADDED PROPERLY
+    if not title or not owner_id:
+        raise HTTPException(status_code=400, detail="Missing required fields")
+
+    new_task = models.Task(
+        title=title,
+        description=data.get("description"),
+        owner_id=owner_id,
+        assigned_by_id=current_user.id,
+        status="Pending",
+        github_link=data.get("github_link"),
+        created_at=datetime.utcnow()
     )
 
     db.add(new_task)
@@ -186,10 +191,11 @@ def assign_task(
 
     # 🔔 notify user
     notification = models.Notification(
-        message=f"New task assigned: {data['title']}",
-        user_id=data["owner_id"],
+        message=f"New task assigned: {title}",
+        user_id=owner_id,
         sender_id=current_user.id,
-        is_read=False
+        is_read=False,
+        created_at=datetime.utcnow()
     )
 
     db.add(notification)
@@ -199,7 +205,7 @@ def assign_task(
 
 
 # ==========================
-# GET NOTIFICATIONS (UNREAD ONLY)
+# GET NOTIFICATIONS
 # ==========================
 @router.get("/notifications")
 def get_notifications(
@@ -207,16 +213,21 @@ def get_notifications(
     current_user: models.User = Depends(get_current_user)
 ):
     notifications = db.query(models.Notification)\
-        .filter(
-            models.Notification.user_id == current_user.id,
-            models.Notification.is_read == False
-        )\
+        .filter(models.Notification.user_id == current_user.id)\
         .order_by(models.Notification.created_at.desc())\
         .all()
 
     return {
         "success": True,
-        "data": notifications
+        "data": [
+            {
+                "id": n.id,
+                "message": n.message,
+                "is_read": n.is_read,
+                "created_at": n.created_at.isoformat() if n.created_at else None
+            }
+            for n in notifications
+        ]
     }
 
 
@@ -228,14 +239,28 @@ def mark_notifications_read(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
-    notifications = db.query(models.Notification).filter(
-        models.Notification.user_id == current_user.id,
-        models.Notification.is_read == False
-    ).all()
-
-    for n in notifications:
-        n.is_read = True
+    db.query(models.Notification)\
+        .filter(
+            models.Notification.user_id == current_user.id,
+            models.Notification.is_read == False
+        )\
+        .update({"is_read": True})
 
     db.commit()
 
     return {"success": True, "message": "Notifications marked as read"}
+
+@router.get("/")
+def get_all_tasks(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    if current_user.role != "ADMIN":
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    tasks = db.query(models.Task).all()
+
+    return {
+        "success": True,
+        "data": tasks
+    }

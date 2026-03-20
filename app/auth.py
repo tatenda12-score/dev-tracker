@@ -12,11 +12,12 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
 # =========================
-# SECURITY SETTINGS
+# 🔐 SECURITY SETTINGS
 # =========================
-SECRET_KEY = "supersecretkey"
+SECRET_KEY = "supersecretkey"  # ⚠️ Move to env in production
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
+
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -24,7 +25,19 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
 # =========================
-# PASSWORD HELPERS
+# 🔧 HELPER: SERIALIZE USER
+# =========================
+def serialize_user(user):
+    return {
+        "id": user.id,
+        "name": user.name,
+        "email": user.email,
+        "role": user.role
+    }
+
+
+# =========================
+# 🔑 PASSWORD HELPERS
 # =========================
 def hash_password(password: str):
     return pwd_context.hash(str(password)[:72])
@@ -35,19 +48,23 @@ def verify_password(plain_password: str, password_hash: str):
 
 
 # =========================
-# CREATE TOKEN
+# 🎟️ CREATE TOKEN
 # =========================
 def create_access_token(data: dict):
     to_encode = data.copy()
 
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
+
+    to_encode.update({
+        "exp": expire,
+        "iat": datetime.utcnow()
+    })
 
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
 # =========================
-# LOGIN
+# 🔐 LOGIN
 # =========================
 @router.post("/login")
 def login(
@@ -62,32 +79,31 @@ def login(
     if not user or not verify_password(form_data.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password"
+            detail="Invalid email or password",
+            headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # ✅ INCLUDE ROLE + EMAIL IN TOKEN
     access_token = create_access_token(
         data={
             "sub": user.email,
+            "user_id": user.id,
             "role": user.role
         }
     )
 
-    # ✅ MATCH FRONTEND EXPECTATION
     return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "user": {
-            "id": user.id,
-            "name": user.name,
-            "email": user.email,
-            "role": user.role
-        }
+        "success": True,
+        "data": {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": serialize_user(user)
+        },
+        "message": "Login successful"
     }
 
 
 # =========================
-# GET CURRENT USER
+# 👤 GET CURRENT USER
 # =========================
 def get_current_user(
     token: str = Depends(oauth2_scheme),
@@ -96,22 +112,24 @@ def get_current_user(
 
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Invalid authentication credentials"
+        detail="Invalid authentication credentials",
+        headers={"WWW-Authenticate": "Bearer"},
     )
 
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
 
         email: str = payload.get("sub")
+        user_id: int = payload.get("user_id")
 
-        if email is None:
+        if email is None or user_id is None:
             raise credentials_exception
 
     except JWTError:
         raise credentials_exception
 
     user = db.query(models.User).filter(
-        models.User.email == email
+        models.User.id == user_id
     ).first()
 
     if user is None:
@@ -121,16 +139,13 @@ def get_current_user(
 
 
 # =========================
-# GET CURRENT USER (ROUTE)
+# 👤 GET CURRENT USER ROUTE
 # =========================
 @router.get("/me")
-def get_current_logged_user(current_user: models.User = Depends(get_current_user)):
+def get_current_logged_user(
+    current_user: models.User = Depends(get_current_user)
+):
     return {
         "success": True,
-        "data": {
-            "id": current_user.id,
-            "name": current_user.name,
-            "email": current_user.email,
-            "role": current_user.role
-        }
+        "data": serialize_user(current_user)
     }

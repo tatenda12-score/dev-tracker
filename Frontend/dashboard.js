@@ -1,285 +1,236 @@
-if (!localStorage.getItem("token")) {
+// ==========================
+// 🔐 AUTH CHECK
+// ==========================
+const token = localStorage.getItem("token");
+
+if (!token) {
     window.location.href = "login.html";
 }
 
-document.addEventListener("DOMContentLoaded", function () {
-    loadTasks();
-    loadNotifications();
-    loadUser();
-    loadJobCards();
 
-    // default view
-    showSection("tasks");
+// ==========================
+// 🚀 INIT
+// ==========================
+document.addEventListener("DOMContentLoaded", () => {
+    loadDashboard();
 });
 
 
-// ================= SECTION SWITCHING =================
-function showSection(section){
-
-    const tasks = document.getElementById("tasksSection");
-    const jobs = document.getElementById("jobsSection");
-
-    if(section === "tasks"){
-        tasks.style.display = "block";
-        jobs.style.display = "none";
-    } else {
-        tasks.style.display = "none";
-        jobs.style.display = "block";
-    }
+// ==========================
+// MAIN LOAD
+// ==========================
+async function loadDashboard() {
+    await Promise.all([
+        loadKPIs(),
+        loadTasks(),
+        loadJobs(),
+        loadCharts(),
+        loadPerformance()
+    ]);
 }
 
 
-// ================= USER =================
-async function loadUser() {
+// ==========================
+// KPI CARDS
+// ==========================
+async function loadKPIs() {
 
-    const response = await apiRequest("/users/me");
+    const res = await apiRequest("/tasks/my-tasks");
+    const tasks = res?.data || [];
 
-    const user = response.data || response;
+    const total = tasks.length;
+    const completed = tasks.filter(t => t.status === "Completed").length;
+    const inProgress = tasks.filter(t => t.status === "In Progress").length;
 
-    document.getElementById("userInfo").innerHTML =
-        `Logged in as: <strong>${user.name}</strong> (${user.role})`;
+    const hoursRes = await apiRequest("/analytics/total-hours");
+    const hours = hoursRes?.data?.total_hours || 0;
+
+    document.getElementById("assignedTasks").innerText = total;
+    document.getElementById("completedTasks").innerText = completed;
+    document.getElementById("inProgressTasks").innerText = inProgress;
+    document.getElementById("hoursWorked").innerText = hours + "h";
 }
 
 
-// ================= NOTIFICATIONS =================
-async function loadNotifications() {
+// ==========================
+// TASK TABLE
+// ==========================
+async function loadTasks() {
 
-    const response = await apiRequest("/tasks/my-tasks");
+    const res = await apiRequest("/tasks/my-tasks");
+    const tasks = res?.data || [];
 
-    const tasks = response.data?.items || response.data || [];
-
-    const container = document.getElementById("notifications");
-    container.innerHTML = "";
+    const table = document.getElementById("tasksTable");
+    table.innerHTML = "";
 
     tasks.forEach(task => {
 
-        if (task.status === "Pending") {
+        const row = document.createElement("tr");
 
-            container.innerHTML += `
-                <div class="task-card">
-                    <h4>${task.title}</h4>
-                    <p>${task.description}</p>
-                    <button onclick="startTask(${task.id})">Start Task</button>
-                </div>
-            `;
-        }
+        row.innerHTML = `
+            <td>${task.title}</td>
+            <td>${getStatusBadge(task.status)}</td>
+            <td>${getTaskAction(task)}</td>
+        `;
 
+        table.appendChild(row);
     });
 }
 
 
-// ================= TASKS =================
-async function loadTasks() {
+// ==========================
+// JOB TABLE
+// ==========================
+async function loadJobs() {
 
-    const response = await apiRequest("/tasks/my-tasks");
+    const res = await apiRequest("/job-cards/");
+    const jobs = res?.data || [];
 
-    const tasks = response.data?.items || response.data || [];
+    const table = document.getElementById("jobsTable");
+    table.innerHTML = "";
 
-    const container = document.getElementById("tasks");
-    container.innerHTML = "";
+    jobs.forEach(job => {
 
-    tasks
-    .sort((a, b) => {
+        const row = document.createElement("tr");
 
-        // 1. In Progress first 🔥
-        if (a.status === "In Progress" && b.status !== "In Progress") return -1;
-        if (a.status !== "In Progress" && b.status === "In Progress") return 1;
-
-        // 2. Then Pending
-        if (a.status === "Pending" && b.status !== "Pending") return -1;
-        if (a.status !== "Pending" && b.status === "Pending") return 1;
-
-        // 3. Then newest
-        return new Date(b.created_at) - new Date(a.created_at);
-    })
-    .forEach(task =>  {
-
-        const assigned = task.created_at
-            ? new Date(task.created_at).toLocaleString("en-ZW", { timeZone: "Africa/Harare" })
-            : "N/A";
-
-        const started = task.start_time
-            ? new Date(task.start_time).toLocaleString("en-ZW", { timeZone: "Africa/Harare" })
-            : "Not started";
-
-        const completed = task.end_time
-            ? new Date(task.end_time).toLocaleString("en-ZW", { timeZone: "Africa/Harare" })
-            : "Not completed";
-
-        const duration = task.time_taken
-            ? (task.time_taken / 60).toFixed(2) + " min"
-            : "0 min";
-
-        const githubLink = task.github_link && task.github_link.trim() !== ""
-            ? `<p>🔗 <a href="${task.github_link}" target="_blank">View GitHub Repo</a></p>`
-            : "";
-
-        container.innerHTML += `
-            <div class="task-card ${task.status === "In Progress" ? "active-task" : ""}">
-                <h4>${task.title}</h4>
-                <p>${task.description}</p>
-
-                ${githubLink}
-
-                <p><strong>Status:</strong> ${task.status}</p>
-
-                <p>📅 Assigned: ${assigned}</p>
-                <p>▶ Started: ${started}</p>
-                <p>✅ Completed: ${completed}</p>
-                <p>⏱ Duration: ${duration}</p>
-
-                ${
-                    task.status === "Pending"
-                    ? `<button onclick="startTask(${task.id})">Start Task</button>`
-                    : ""
-                }
-
-                ${
-                    task.status === "In Progress"
-                    ? `<button onclick="completeTask(${task.id})">Complete</button>`
-                    : ""
-                }
-            </div>
+        row.innerHTML = `
+            <td>#${job.id}</td>
+            <td>${job.title}</td>
+            <td>${getStatusBadge(job.status)}</td>
         `;
+
+        table.appendChild(row);
     });
 }
-// ================= JOB CARDS =================
-async function loadJobCards(){
 
-    const response = await apiRequest("/job-cards/");
 
-    const jobs = response.data || [];
+// ==========================
+// CHARTS
+// ==========================
+async function loadCharts(){
 
-    const container = document.getElementById("jobCards");
-    const alertBox = document.getElementById("jobAlert");
+    const res = await apiRequest("/tasks/my-tasks");
+    const tasks = res?.data || [];
 
-    container.innerHTML = "";
+    const completed = tasks.filter(t => t.status === "Completed").length;
+    const inProgress = tasks.filter(t => t.status === "In Progress").length;
+    const pending = tasks.filter(t => t.status === "Pending").length;
 
-    let hasPendingJob = false;
-
-    jobs
-    .sort((a, b) => {
-
-        // Pending first
-        if (a.status === "Pending" && b.status !== "Pending") return -1;
-        if (a.status !== "Pending" && b.status === "Pending") return 1;
-
-        // newest first
-        return new Date(b.created_at) - new Date(a.created_at);
-    })
-    .forEach(job => {
-
-        if(job.status === "Pending"){
-            hasPendingJob = true;
+    new Chart(document.getElementById("pieChart"), {
+        type: "pie",
+        data: {
+            labels: ["Completed", "In Progress", "Pending"],
+            datasets: [{
+                data: [completed, inProgress, pending]
+            }]
         }
-
-        const assigned = job.created_at
-            ? new Date(job.created_at).toLocaleString("en-ZW", { timeZone: "Africa/Harare" })
-            : "N/A";
-
-        const opened = job.opened_at
-            ? new Date(job.opened_at).toLocaleString("en-ZW", { timeZone: "Africa/Harare" })
-            : "Not started";
-
-        const closed = job.closed_at
-            ? new Date(job.closed_at).toLocaleString("en-ZW", { timeZone: "Africa/Harare" })
-            : "Not completed";
-
-        const duration = job.duration
-            ? (job.duration / 60).toFixed(2) + " min"
-            : "0 min";
-
-        container.innerHTML += `
-            <div class="task-card ${job.status === "Pending" ? "new-job" : ""}">
-                <h4>
-                    ${job.title}
-                    ${job.status === "Pending" ? " 🔴 NEW" : ""}
-                </h4>
-
-                <p>${job.description}</p>
-
-                <p><strong>Status:</strong> ${job.status}</p>
-
-                <p>📅 Assigned: ${assigned}</p>
-                <p>▶ Started: ${opened}</p>
-                <p>✅ Closed: ${closed}</p>
-                <p>⏱ Duration: ${duration}</p>
-
-                ${
-                    job.status === "Pending"
-                    ? `<button onclick="openJob(${job.id})">Open Job</button>`
-                    : ""
-                }
-
-                ${
-                    job.status === "Open"
-                    ? `
-                        <input id="update-${job.id}" placeholder="Add update">
-                        <button onclick="addUpdate(${job.id})">Update</button>
-                        <button onclick="closeJob(${job.id})">Close Job</button>
-                    `
-                    : ""
-                }
-            </div>
-        `;
     });
 
-    // 🔔 ALERT LOGIC (UNCHANGED)
-    if(hasPendingJob){
-        alertBox.style.display = "block";
-        showSection("jobs");
-    } else {
-        alertBox.style.display = "none";
+    // Simple weekly mock (can improve later)
+    const weekly = [1,2,3,2,4];
+
+    new Chart(document.getElementById("barChart"), {
+        type: "bar",
+        data: {
+            labels: ["Mon","Tue","Wed","Thu","Fri"],
+            datasets: [{
+                label: "Tasks",
+                data: weekly
+            }]
+        }
+    });
+}
+
+// ==========================
+// PERFORMANCE
+// ==========================
+async function loadPerformance() {
+
+    const res = await apiRequest("/analytics/productivity-score");
+
+    const data = res?.data || {};
+
+    document.getElementById("perfCompleted").innerText =
+        data.weekly_hours || 0;
+
+    document.getElementById("avgTime").innerText =
+        ((data.weekly_hours || 0) / 7).toFixed(2) + " hrs";
+
+    document.getElementById("efficiency").innerText =
+        data.productivity_score + "%";
+}
+
+
+// ==========================
+// ACTION BUTTONS
+// ==========================
+function getTaskAction(task) {
+
+    if (task.status === "Pending") {
+        return `<button class="btn btn-start" onclick="startTask(${task.id})">Start</button>`;
+    }
+
+    if (task.status === "In Progress") {
+        return `<button class="btn btn-update" onclick="completeTask(${task.id})">Complete</button>`;
+    }
+
+    return `<button class="btn btn-view">View</button>`;
+}
+
+
+// ==========================
+// STATUS BADGES
+// ==========================
+function getStatusBadge(status) {
+
+    if (status === "Pending") {
+        return `<span class="badge pending">Pending</span>`;
+    }
+
+    if (status === "In Progress") {
+        return `<span class="badge progress">In Progress</span>`;
+    }
+
+    if (status === "Completed") {
+        return `<span class="badge completed">Completed</span>`;
+    }
+
+    return status;
+}
+
+
+// ==========================
+// TASK ACTIONS
+// ==========================
+async function startTask(id) {
+    await apiRequest(`/tasks/start/${id}`, "PUT");
+    loadDashboard();
+}
+
+async function completeTask(id) {
+    await apiRequest(`/tasks/complete/${id}`, "PUT");
+    loadDashboard();
+}
+
+function scrollToSection(section){
+
+    const map = {
+        dashboard: document.querySelector(".kpi"),
+        tasks: document.querySelector("#tasksTable"),
+        jobs: document.querySelector("#jobsTable"),
+        performance: document.querySelector(".performance")
+    };
+
+    if(map[section]){
+        map[section].scrollIntoView({ behavior: "smooth" });
     }
 }
 
 
-// ================= JOB ACTIONS =================
-async function openJob(jobId){
-    await apiRequest(`/job-cards/open/${jobId}`, "PUT");
-    loadJobCards();
-}
-
-async function closeJob(jobId){
-    await apiRequest(`/job-cards/close/${jobId}`, "PUT");
-    loadJobCards();
-}
-
-async function addUpdate(jobId){
-
-    const input = document.getElementById(`update-${jobId}`);
-    const message = input.value;
-
-    if(!message) return alert("Enter update");
-
-    await apiRequest(`/job-cards/update/${jobId}`, "POST", {
-        message: message
-    });
-
-    input.value = "";
-    loadJobCards();
-}
-
-
-// ================= TASK ACTIONS =================
-async function startTask(taskId) {
-
-    await apiRequest(`/tasks/start/${taskId}`, "PUT");
-
-    loadNotifications();
-    loadTasks();
-}
-
-async function completeTask(taskId) {
-
-    await apiRequest(`/tasks/complete/${taskId}`, "PUT");
-
-    loadTasks();
-}
-
-
-// ================= LOGOUT =================
-function logout(){
+// ==========================
+// LOGOUT
+// ==========================
+function logout() {
     localStorage.clear();
     window.location.href = "login.html";
 }
