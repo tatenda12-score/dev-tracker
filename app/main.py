@@ -5,8 +5,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base
 from app.auth import get_current_user
 from app import auth
-from app.routers import admin, users, tasks, analytics, job_cards
 
+# routers
+from app.routers import admin, users, tasks, analytics
+from app import job_cards
 # ==========================
 # CREATE APP
 # ==========================
