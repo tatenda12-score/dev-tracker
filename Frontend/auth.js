@@ -16,34 +16,33 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
     try {
         const response = await fetch("https://dev-tracker-yfvj.onrender.com/auth/login", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded"
-            },
             body: formData
         });
 
-        let result;
-        try {
-            result = await response.json();
-        } catch (e) {
-            alert("Server waking up... please try again in a few seconds.");
-            return;
-        }
+        const result = await response.json();
 
         if (!response.ok) {
-            alert(result.message || result.detail || "Login failed");
+            alert(result.detail || "Login failed");
             return;
         }
 
-        // ✅ Save auth data
-        localStorage.setItem("token", result.access_token);
-        localStorage.setItem("userId", result.user.id);
-        localStorage.setItem("role", result.user.role);
-        localStorage.setItem("email", result.user.email);
-        localStorage.setItem("name", result.user.name);
+        // ✅ FIX: extract from result.data
+        const data = result.data;
 
-        // 🔥 Redirect
-        if (result.user.role === "ADMIN") {
+        if (!data || !data.user) {
+            alert("Invalid server response");
+            return;
+        }
+
+        // ✅ SAVE CORRECTLY
+        localStorage.setItem("token", data.access_token);
+        localStorage.setItem("userId", data.user.id);
+        localStorage.setItem("role", data.user.role);
+        localStorage.setItem("email", data.user.email);
+        localStorage.setItem("name", data.user.name || "");
+
+        // ✅ REDIRECT
+        if (data.user.role === "ADMIN") {
             window.location.href = "admin.html";
         } else {
             window.location.href = "dashboard.html";
