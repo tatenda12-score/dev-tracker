@@ -16,28 +16,34 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
     try {
         const response = await fetch("https://dev-tracker-yfvj.onrender.com/auth/login", {
             method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
             body: formData
         });
 
-        const result = await response.json();
+        let result;
+        try {
+            result = await response.json();
+        } catch (e) {
+            alert("Server waking up... please try again in a few seconds.");
+            return;
+        }
 
-        // ❌ Handle backend error
         if (!response.ok) {
             alert(result.message || result.detail || "Login failed");
             return;
         }
 
-        const data = result;
-
         // ✅ Save auth data
-        localStorage.setItem("token", data.access_token);
-        localStorage.setItem("userId", data.user.id);
-        localStorage.setItem("role", data.user.role);
-        localStorage.setItem("email", data.user.email);
-        localStorage.setItem("name", data.user.name);
+        localStorage.setItem("token", result.access_token);
+        localStorage.setItem("userId", result.user.id);
+        localStorage.setItem("role", result.user.role);
+        localStorage.setItem("email", result.user.email);
+        localStorage.setItem("name", result.user.name);
 
-        // 🔥 Redirect based on role
-        if (data.user.role === "ADMIN") {
+        // 🔥 Redirect
+        if (result.user.role === "ADMIN") {
             window.location.href = "admin.html";
         } else {
             window.location.href = "dashboard.html";
