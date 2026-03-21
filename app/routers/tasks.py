@@ -71,6 +71,27 @@ def get_tasks_for_user(
 
 
 # ==========================
+# GET ALL TASKS (ADMIN)
+# ==========================
+@router.get("/")
+def get_all_tasks(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    if current_user.role != "ADMIN":
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    tasks = db.query(models.Task)\
+        .order_by(models.Task.id.desc())\
+        .all()
+
+    return {
+        "success": True,
+        "data": [serialize_task(t) for t in tasks]   # ✅ FIXED HERE
+    }
+
+
+# ==========================
 # START TASK
 # ==========================
 @router.put("/start/{task_id}")
@@ -249,18 +270,3 @@ def mark_notifications_read(
     db.commit()
 
     return {"success": True, "message": "Notifications marked as read"}
-
-@router.get("/")
-def get_all_tasks(
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
-):
-    if current_user.role != "ADMIN":
-        raise HTTPException(status_code=403, detail="Admin only")
-
-    tasks = db.query(models.Task).all()
-
-    return {
-        "success": True,
-        "data": tasks
-    }
