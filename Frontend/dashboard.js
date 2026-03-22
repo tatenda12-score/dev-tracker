@@ -36,13 +36,12 @@ async function loadDashboard() {
 async function loadKPIs() {
 
     const res = await apiRequest("/tasks/my-tasks");
-    const tasks = res?.data?.data || [];
+    const tasks = res?.data || [];
 
     const total = tasks.length;
     const completed = tasks.filter(t => t.status === "Completed").length;
     const inProgress = tasks.filter(t => t.status === "In Progress").length;
 
-    // 🔥 Calculate hours from tasks (no dependency on analytics)
     const totalSeconds = tasks.reduce((sum, t) => sum + (t.time_taken || 0), 0);
     const hours = (totalSeconds / 3600).toFixed(2);
 
@@ -51,7 +50,6 @@ async function loadKPIs() {
     document.getElementById("inProgressTasks").innerText = inProgress;
     document.getElementById("hoursWorked").innerText = hours + "h";
 
-    // 🔥 Show user name
     const user = JSON.parse(localStorage.getItem("user"));
     if (user && user.name) {
         document.getElementById("userName").innerText = "Welcome, " + user.name;
@@ -65,7 +63,7 @@ async function loadKPIs() {
 async function loadTasks() {
 
     const res = await apiRequest("/tasks/my-tasks");
-    const tasks = res?.data?.data || [];
+    const tasks = res?.data || [];
 
     const table = document.getElementById("tasksTable");
     table.innerHTML = "";
@@ -91,7 +89,7 @@ async function loadTasks() {
 async function loadJobs() {
 
     const res = await apiRequest("/job-cards/");
-    const jobs = res?.data?.data || [];
+    const jobs = res?.data || [];
 
     const table = document.getElementById("jobsTable");
     table.innerHTML = "";
@@ -117,13 +115,12 @@ async function loadJobs() {
 async function loadCharts(){
 
     const res = await apiRequest("/tasks/my-tasks");
-    const tasks = res?.data?.data || [];
+    const tasks = res?.data || [];
 
     const completed = tasks.filter(t => t.status === "Completed").length;
     const inProgress = tasks.filter(t => t.status === "In Progress").length;
     const pending = tasks.filter(t => t.status === "Pending").length;
 
-    // Destroy old charts if needed (avoid duplication)
     if (window.pieChartInstance) {
         window.pieChartInstance.destroy();
     }
