@@ -51,8 +51,12 @@ async function loadKPIs() {
     document.getElementById("hoursWorked").innerText = hours + "h";
 
     const user = JSON.parse(localStorage.getItem("user"));
+
     if (user && user.name) {
-        document.getElementById("userName").innerText = "Welcome, " + user.name;
+        const title = document.getElementById("dashboardTitle");
+    if (title) {
+        title.innerText = "Welcome, " + user.name;
+    }
     }
 }
 
