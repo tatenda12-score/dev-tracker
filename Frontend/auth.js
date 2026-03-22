@@ -35,11 +35,14 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
         }
 
         // ✅ SAVE CORRECTLY
-        localStorage.setItem("token", data.access_token);
+       localStorage.setItem("token", data.access_token);
+
+       // 🔥 SAVE FULL USER OBJECT (THIS FIXES EVERYTHING)
+        localStorage.setItem("user", JSON.stringify(data.user));
+
+      // (optional — keep if you want quick access)
         localStorage.setItem("userId", data.user.id);
         localStorage.setItem("role", data.user.role);
-        localStorage.setItem("email", data.user.email);
-        localStorage.setItem("name", data.user.name || "");
 
         // ✅ REDIRECT
         if (data.user.role === "ADMIN") {
