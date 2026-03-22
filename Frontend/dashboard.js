@@ -12,6 +12,17 @@ if (!token) {
 // 🚀 INIT
 // ==========================
 document.addEventListener("DOMContentLoaded", () => {
+
+    // 🔥 SET USER NAME IMMEDIATELY
+    const user = JSON.parse(localStorage.getItem("user"));
+
+    if (user && user.name) {
+        const title = document.getElementById("dashboardTitle");
+        if (title) {
+            title.innerText = "Welcome, " + user.name;
+        }
+    }
+
     loadDashboard();
 });
 
