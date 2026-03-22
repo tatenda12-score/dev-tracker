@@ -11,22 +11,28 @@ router = APIRouter(
     tags=["Tasks"]
 )
 
-# ==========================
-# 🔧 SERIALIZER
-# ==========================
 def serialize_task(t):
-    return {
-        "id": t.id,
-        "title": t.title,
-        "description": t.description,
-        "status": t.status,
-        "created_at": t.created_at.isoformat() if t.created_at else None,
-        "start_time": t.start_time.isoformat() if t.start_time else None,
-        "end_time": t.end_time.isoformat() if t.end_time else None,
-        "time_taken": t.time_taken or 0,
-        "github_link": t.github_link
-    }
+    try:
+        return {
+            "id": t.id,
+            "title": t.title,
+            "description": t.description,
+            "status": t.status,
+            "created_at": t.created_at.isoformat() if getattr(t, "created_at", None) else None,
+            "start_time": t.start_time.isoformat() if getattr(t, "start_time", None) else None,
+            "end_time": t.end_time.isoformat() if getattr(t, "end_time", None) else None,
+            "time_taken": float(t.time_taken) if getattr(t, "time_taken", None) else 0,
+            "github_link": t.github_link
+        }
+    except Exception as e:
+        print("🔥 SERIALIZATION ERROR:", e)
 
+        return {
+            "id": t.id,
+            "title": t.title,
+            "status": t.status,
+            "error": "serialization failed"
+        }
 
 # ==========================
 # GET MY TASKS (USER)
