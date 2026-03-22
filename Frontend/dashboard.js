@@ -204,15 +204,15 @@ async function loadPerformance() {
 // ==========================
 function getTaskAction(task) {
 
-    if (task.status === "Pending") {
-        return `<button class="btn btn-start" onclick="startTask(${task.id})">Start</button>`;
+    if (task.status === "Completed") {
+        return `<button class="btn btn-view" onclick='viewTask(${JSON.stringify(task)})'>View</button>`;
     }
 
     if (task.status === "In Progress") {
         return `<button class="btn btn-update" onclick="completeTask(${task.id})">Complete</button>`;
     }
 
-    return `<button class="btn btn-view">View</button>`;
+    return `<button class="btn btn-start" onclick="startTask(${task.id})">Start</button>`;
 }
 
 
@@ -277,7 +277,24 @@ async function closeJob(id) {
     await apiRequest(`/job-cards/close/${id}`, "PUT");
     loadDashboard(); // refresh after closing
 }
+function viewTask(task) {
 
+    document.getElementById("modalTitle").innerText = task.title;
+    document.getElementById("modalDescription").innerText = task.description || "N/A";
+    document.getElementById("modalStatus").innerText = task.status;
+
+    document.getElementById("modalGithub").innerText = task.github_link || "N/A";
+    document.getElementById("modalGithub").href = task.github_link || "#";
+
+    document.getElementById("modalStart").innerText = task.start_time || "N/A";
+    document.getElementById("modalEnd").innerText = task.end_time || "N/A";
+    document.getElementById("modalTime").innerText = task.time_taken || "0";
+
+    document.getElementById("taskModal").style.display = "flex";
+}
+function closeModal() {
+    document.getElementById("taskModal").style.display = "none";
+}
 
 // ==========================
 // LOGOUT

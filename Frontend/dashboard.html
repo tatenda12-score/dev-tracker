@@ -133,6 +133,31 @@
             display:flex;
             justify-content:space-between;
         }
+
+        .modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    width: 400px;
+}
+
+.close {
+    float: right;
+    font-size: 24px;
+    cursor: pointer;
+}
     </style>
 </head>
 
@@ -232,6 +257,22 @@
 
     </div>
 
+</div>
+
+<!-- 🔥 TASK VIEW MODAL -->
+<div id="taskModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+
+        <h2 id="modalTitle">Task Details</h2>
+
+        <p><strong>Description:</strong> <span id="modalDescription"></span></p>
+        <p><strong>Status:</strong> <span id="modalStatus"></span></p>
+        <p><strong>GitHub:</strong> <a id="modalGithub" target="_blank"></a></p>
+        <p><strong>Start Time:</strong> <span id="modalStart"></span></p>
+        <p><strong>End Time:</strong> <span id="modalEnd"></span></p>
+        <p><strong>Time Taken:</strong> <span id="modalTime"></span></p>
+    </div>
 </div>
 
 <script src="api.js"></script>
