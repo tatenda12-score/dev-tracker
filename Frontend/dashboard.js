@@ -89,7 +89,9 @@ async function loadTasks() {
 async function loadJobs() {
 
     const res = await apiRequest("/job-cards/");
-    const jobs = res?.data || [];
+
+    // 🔥 FIX: correct response structure
+    const jobs = res?.data?.data || [];
 
     const table = document.getElementById("jobsTable");
     table.innerHTML = "";
@@ -102,12 +104,17 @@ async function loadJobs() {
             <td>#${job.id}</td>
             <td>${job.title}</td>
             <td>${getStatusBadge(job.status)}</td>
+            <td>
+                <button class="btn btn-view" onclick="viewJob(${job.id})">View</button>
+                ${job.status !== "Closed" 
+                    ? `<button class="btn btn-update" onclick="closeJob(${job.id})">Close</button>` 
+                    : ""}
+            </td>
         `;
 
         table.appendChild(row);
     });
 }
-
 
 // ==========================
 // CHARTS
@@ -245,6 +252,16 @@ function scrollToSection(section){
     if(map[section]){
         map[section].scrollIntoView({ behavior: "smooth" });
     }
+}
+
+async function viewJob(id) {
+    alert("Viewing job ID: " + id);
+    // later we can replace with modal popup
+}
+
+async function closeJob(id) {
+    await apiRequest(`/job-cards/close/${id}`, "PUT");
+    loadDashboard(); // refresh after closing
 }
 
 
