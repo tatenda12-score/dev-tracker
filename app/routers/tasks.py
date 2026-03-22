@@ -12,28 +12,25 @@ router = APIRouter(
 )
 
 def serialize_task(t):
-    try:
-        return {
-            "id": t.id,
-            "title": t.title,
-            "description": t.description,
-            "status": t.status,
-            "created_at": t.created_at.isoformat() if getattr(t, "created_at", None) else None,
-            "start_time": t.start_time.isoformat() if getattr(t, "start_time", None) else None,
-            "end_time": t.end_time.isoformat() if getattr(t, "end_time", None) else None,
-            "time_taken": float(t.time_taken) if getattr(t, "time_taken", None) else 0,
-            "github_link": t.github_link
-        }
-    except Exception as e:
-        print("🔥 SERIALIZATION ERROR:", e)
+    return {
+        "id": t.id,
+        "title": t.title,
+        "description": t.description,
+        "status": t.status,
 
-        return {
-            "id": t.id,
-            "title": t.title,
-            "status": t.status,
-            "error": "serialization failed"
-        }
+        "created_at": t.created_at.isoformat() if t.created_at else None,
 
+        "start_time": t.start_time.isoformat() if t.start_time else None,
+        "end_time": t.end_time.isoformat() if t.end_time else None,
+
+        # 🔥 handle safely
+        "time_taken": float(t.time_taken) if t.time_taken else 0,
+        "hours_spent": float(t.hours_spent) if t.hours_spent else 0,
+
+        "completed_at": t.completed_at.isoformat() if t.completed_at else None,
+
+        "github_link": t.github_link
+    }
 # ==========================
 # GET MY TASKS (USER)
 # ==========================
