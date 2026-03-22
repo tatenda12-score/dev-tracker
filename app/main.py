@@ -9,6 +9,8 @@ from app import auth
 # routers
 from app.routers import admin, users, tasks, analytics
 from app import job_cards
+
+
 # ==========================
 # CREATE APP
 # ==========================
@@ -23,16 +25,21 @@ app = FastAPI(
 # ==========================
 @app.on_event("startup")
 def startup():
-    # ⚠️ OK for development (use migrations in production)
     Base.metadata.create_all(bind=engine)
 
 
 # ==========================
-# CORS CONFIG
+# 🔥 CORRECT CORS CONFIG (FIXED)
 # ==========================
+origins = [
+    "https://dev-tracker-sigma.vercel.app",  # ✅ your frontend
+    "http://localhost:3000",
+    "http://127.0.0.1:5500"
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 🔥 Change to your frontend URL in production
+    allow_origins=origins,  # ❗ NOT "*"
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -100,7 +107,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 
 
 # ==========================
-# GLOBAL ERROR HANDLER 🔥
+# GLOBAL ERROR HANDLER
 # ==========================
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
