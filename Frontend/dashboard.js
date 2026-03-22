@@ -203,16 +203,7 @@ async function loadPerformance() {
 // ACTION BUTTONS
 // ==========================
 function getTaskAction(task) {
-
-    if (task.status === "Completed") {
-        return `<button class="btn btn-view" onclick='viewTask(${JSON.stringify(task)})'>View</button>`;
-    }
-
-    if (task.status === "In Progress") {
-        return `<button class="btn btn-update" onclick="completeTask(${task.id})">Complete</button>`;
-    }
-
-    return `<button class="btn btn-start" onclick="startTask(${task.id})">Start</button>`;
+    return `<button class="btn btn-view" onclick='viewTask(${JSON.stringify(task)})'>View</button>`;
 }
 
 
@@ -288,14 +279,50 @@ function viewTask(task) {
 
     document.getElementById("modalStart").innerText = task.start_time || "N/A";
     document.getElementById("modalEnd").innerText = task.end_time || "N/A";
-    document.getElementById("modalTime").innerText = task.time_taken || "0";
+
+    document.getElementById("modalTime").innerText = formatTime(task.time_taken);
+
+    // 🔥 ADD THIS BLOCK HERE
+    const actions = document.getElementById("modalActions");
+
+    if (task.status === "Pending") {
+        actions.innerHTML = `
+            <button class="btn btn-start" onclick="startTask(${task.id}); closeModal();">
+                Start Task
+            </button>
+        `;
+    }
+    else if (task.status === "In Progress") {
+        actions.innerHTML = `
+            <button class="btn btn-update" onclick="completeTask(${task.id}); closeModal();">
+                Complete Task
+            </button>
+        `;
+    }
+    else {
+        actions.innerHTML = `<span class="badge completed">Completed</span>`;
+    }
 
     document.getElementById("taskModal").style.display = "flex";
 }
+
 function closeModal() {
     document.getElementById("taskModal").style.display = "none";
 }
 
+function formatTime(seconds) {
+
+    if (!seconds) return "0 min";
+
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+
+    if (hrs > 0) {
+        return `${hrs}h ${mins}m`;
+    }
+
+    return `${mins} min`;
+}
 // ==========================
 // LOGOUT
 // ==========================
