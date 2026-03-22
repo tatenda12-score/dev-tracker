@@ -119,12 +119,7 @@ async function loadJobs() {
             <td>#${job.id}</td>
             <td>${job.title}</td>
             <td>${getStatusBadge(job.status)}</td>
-            <td>
-                <button class="btn btn-view" onclick="viewJob(${job.id})">View</button>
-                ${job.status !== "Closed" 
-                    ? `<button class="btn btn-update" onclick="closeJob(${job.id})">Close</button>` 
-                    : ""}
-            </td>
+            <td><button class="btn btn-view" onclick='viewJob(${JSON.stringify(job)})'>View</button></td>
         `;
 
         table.appendChild(row);
@@ -322,6 +317,89 @@ function formatTime(seconds) {
     }
 
     return `${mins} min`;
+}
+
+function viewJob(job) {
+
+    currentJobId = job.id;
+
+    document.getElementById("jobTitle").innerText = job.title;
+    document.getElementById("jobDescription").innerText = job.description || "N/A";
+    document.getElementById("jobStatus").innerText = job.status;
+
+    document.getElementById("jobGithub").innerText = job.github_link || "N/A";
+    document.getElementById("jobGithub").href = job.github_link || "#";
+
+    document.getElementById("jobCreated").innerText = job.created_at || "N/A";
+    document.getElementById("jobOpened").innerText = job.opened_at || "N/A";
+    document.getElementById("jobClosed").innerText = job.closed_at || "N/A";
+
+    const actions = document.getElementById("jobActions");
+    const updateSection = document.getElementById("jobUpdateSection");
+
+    // 🔥 STATUS LOGIC
+    if (job.status === "Pending") {
+
+        updateSection.style.display = "none";
+
+        actions.innerHTML = `
+            <button class="btn btn-start" onclick="startJob(${job.id}); closeJobModal();">
+                Start Job
+            </button>
+        `;
+    }
+    else if (job.status === "Open") {
+
+        updateSection.style.display = "block";
+
+        actions.innerHTML = `
+            <button class="btn btn-update" onclick="closeJob(${job.id}); closeJobModal();">
+                Close Job
+            </button>
+        `;
+    }
+    else {
+
+        updateSection.style.display = "none";
+
+        actions.innerHTML = `<span class="badge completed">Closed</span>`;
+    }
+
+    document.getElementById("jobModal").style.display = "flex";
+}
+
+function closeJobModal() {
+    document.getElementById("jobModal").style.display = "none";
+}
+
+async function startJob(id) {
+    await apiRequest(`/job-cards/start/${id}`, "PUT");
+    loadDashboard();
+}
+
+async function closeJob(id) {
+    await apiRequest(`/job-cards/close/${id}`, "PUT");
+    loadDashboard();
+}
+
+async function addJobUpdate() {
+
+    const message = document.getElementById("jobUpdateInput").value.trim();
+
+    if (!message) {
+        alert("Write an update first");
+        return;
+    }
+
+    await apiRequest(`/job-cards/${currentJobId}/updates`, "POST", {
+        message: message
+    });
+
+    document.getElementById("jobUpdateInput").value = "";
+
+    alert("Update added");
+
+    loadDashboard();
 }
 // ==========================
 // LOGOUT

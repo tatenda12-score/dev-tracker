@@ -151,6 +151,8 @@
     padding: 20px;
     border-radius: 10px;
     width: 400px;
+    display: flex;
+    flex-direction: column;
 }
 
 .close {
@@ -161,7 +163,7 @@
 
 #modalActions {
     margin-top: 20px;
-    text-align: right;
+    align-self: flex-end;
 }
     </style>
 </head>
@@ -267,6 +269,7 @@
 <!-- 🔥 TASK VIEW MODAL -->
 <div id="taskModal" class="modal" style="display:none;">
     <div class="modal-content">
+
         <span class="close" onclick="closeModal()">&times;</span>
 
         <h3>My Task</h3>
@@ -277,10 +280,39 @@
         <p><strong>Start Time:</strong> <span id="modalStart"></span></p>
         <p><strong>End Time:</strong> <span id="modalEnd"></span></p>
         <p><strong>Time Taken:</strong> <span id="modalTime"></span></p>
+
+        <!-- ✅ MOVE HERE -->
+        <div id="modalActions"></div>
+
     </div>
-    <div id="modalActions"></div>
 </div>
 
+<!-- 🔥 JOB MODAL -->
+<div id="jobModal" class="modal" style="display:none;">
+    <div class="modal-content">
+
+        <span class="close" onclick="closeJobModal()">&times;</span>
+
+        <h3>My Job</h3>
+        <h2><strong>Title:</strong> <span id="jobTitle"></span></h2>
+
+        <p><strong>Description:</strong> <span id="jobDescription"></span></p>
+        <p><strong>Status:</strong> <span id="jobStatus"></span></p>
+        <p><strong>GitHub:</strong> <a id="jobGithub" target="_blank"></a></p>
+
+        <p><strong>Created At:</strong> <span id="jobCreated"></span></p>
+        <p><strong>Opened At:</strong> <span id="jobOpened"></span></p>
+        <p><strong>Closed At:</strong> <span id="jobClosed"></span></p>
+
+        <div id="jobUpdateSection" style="margin-top:15px;">
+    <textarea id="jobUpdateInput" placeholder="Write update..." style="width:100%; padding:10px;"></textarea>
+    <button class="btn btn-update" onclick="addJobUpdate()">Add Update</button>
+    </div>
+
+        <div id="jobActions"></div>
+
+    </div>
+</div>
 <script src="api.js"></script>
 <script src="dashboard.js"></script>
 
