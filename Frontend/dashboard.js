@@ -36,19 +36,26 @@ async function loadDashboard() {
 async function loadKPIs() {
 
     const res = await apiRequest("/tasks/my-tasks");
-    const tasks = res?.data || [];
+    const tasks = res?.data?.data || [];
 
     const total = tasks.length;
     const completed = tasks.filter(t => t.status === "Completed").length;
     const inProgress = tasks.filter(t => t.status === "In Progress").length;
 
-    const hoursRes = await apiRequest("/analytics/total-hours");
-    const hours = hoursRes?.data?.total_hours || 0;
+    // 🔥 Calculate hours from tasks (no dependency on analytics)
+    const totalSeconds = tasks.reduce((sum, t) => sum + (t.time_taken || 0), 0);
+    const hours = (totalSeconds / 3600).toFixed(2);
 
     document.getElementById("assignedTasks").innerText = total;
     document.getElementById("completedTasks").innerText = completed;
     document.getElementById("inProgressTasks").innerText = inProgress;
     document.getElementById("hoursWorked").innerText = hours + "h";
+
+    // 🔥 Show user name
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (user && user.name) {
+        document.getElementById("userName").innerText = "Welcome, " + user.name;
+    }
 }
 
 
@@ -58,7 +65,7 @@ async function loadKPIs() {
 async function loadTasks() {
 
     const res = await apiRequest("/tasks/my-tasks");
-    const tasks = res?.data || [];
+    const tasks = res?.data?.data || [];
 
     const table = document.getElementById("tasksTable");
     table.innerHTML = "";
@@ -84,7 +91,7 @@ async function loadTasks() {
 async function loadJobs() {
 
     const res = await apiRequest("/job-cards/");
-    const jobs = res?.data || [];
+    const jobs = res?.data?.data || [];
 
     const table = document.getElementById("jobsTable");
     table.innerHTML = "";
@@ -110,13 +117,22 @@ async function loadJobs() {
 async function loadCharts(){
 
     const res = await apiRequest("/tasks/my-tasks");
-    const tasks = res?.data || [];
+    const tasks = res?.data?.data || [];
 
     const completed = tasks.filter(t => t.status === "Completed").length;
     const inProgress = tasks.filter(t => t.status === "In Progress").length;
     const pending = tasks.filter(t => t.status === "Pending").length;
 
-    new Chart(document.getElementById("pieChart"), {
+    // Destroy old charts if needed (avoid duplication)
+    if (window.pieChartInstance) {
+        window.pieChartInstance.destroy();
+    }
+
+    if (window.barChartInstance) {
+        window.barChartInstance.destroy();
+    }
+
+    window.pieChartInstance = new Chart(document.getElementById("pieChart"), {
         type: "pie",
         data: {
             labels: ["Completed", "In Progress", "Pending"],
@@ -126,10 +142,9 @@ async function loadCharts(){
         }
     });
 
-    // Simple weekly mock (can improve later)
-    const weekly = [1,2,3,2,4];
+    const weekly = [1, 2, 3, 2, 4];
 
-    new Chart(document.getElementById("barChart"), {
+    window.barChartInstance = new Chart(document.getElementById("barChart"), {
         type: "bar",
         data: {
             labels: ["Mon","Tue","Wed","Thu","Fri"],
@@ -141,23 +156,28 @@ async function loadCharts(){
     });
 }
 
+
 // ==========================
 // PERFORMANCE
 // ==========================
 async function loadPerformance() {
 
-    const res = await apiRequest("/analytics/productivity-score");
+    try {
+        const res = await apiRequest("/analytics/productivity-score");
+        const data = res?.data || {};
 
-    const data = res?.data || {};
+        document.getElementById("perfCompleted").innerText =
+            data.weekly_hours || 0;
 
-    document.getElementById("perfCompleted").innerText =
-        data.weekly_hours || 0;
+        document.getElementById("avgTime").innerText =
+            ((data.weekly_hours || 0) / 7).toFixed(2) + " hrs";
 
-    document.getElementById("avgTime").innerText =
-        ((data.weekly_hours || 0) / 7).toFixed(2) + " hrs";
+        document.getElementById("efficiency").innerText =
+            (data.productivity_score || 0) + "%";
 
-    document.getElementById("efficiency").innerText =
-        data.productivity_score + "%";
+    } catch (err) {
+        console.log("Performance API not working yet");
+    }
 }
 
 
@@ -212,6 +232,10 @@ async function completeTask(id) {
     loadDashboard();
 }
 
+
+// ==========================
+// NAVIGATION
+// ==========================
 function scrollToSection(section){
 
     const map = {

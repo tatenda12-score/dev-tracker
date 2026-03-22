@@ -236,3 +236,34 @@ def mark_notifications_read(
     db.commit()
 
     return {"success": True, "message": "Marked as read"}
+
+# ==========================
+# 📊 USER DASHBOARD SUMMARY
+# ==========================
+@router.get("/my-dashboard")
+def get_my_dashboard(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    tasks = db.query(models.Task)\
+        .filter(models.Task.owner_id == current_user.id)\
+        .all()
+
+    assigned = len(tasks)
+
+    completed = len([t for t in tasks if t.status == "Completed"])
+    in_progress = len([t for t in tasks if t.status == "In Progress"])
+
+    total_seconds = sum([t.time_taken or 0 for t in tasks])
+    total_hours = round(total_seconds / 3600, 2)
+
+    return {
+        "success": True,
+        "data": {
+            "name": current_user.name,
+            "assigned": assigned,
+            "completed": completed,
+            "in_progress": in_progress,
+            "hours": total_hours
+        }
+    }
