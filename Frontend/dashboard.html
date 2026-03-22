@@ -158,6 +158,11 @@
     font-size: 24px;
     cursor: pointer;
 }
+
+#modalActions {
+    margin-top: 20px;
+    text-align: right;
+}
     </style>
 </head>
 
@@ -264,8 +269,8 @@
     <div class="modal-content">
         <span class="close" onclick="closeModal()">&times;</span>
 
-        <h2 id="modalTitle">Task Details</h2>
-
+        <h3>My Task</h3>
+        <h2><strong>Title:</strong> <span id="modalTitle"></span></h2>
         <p><strong>Description:</strong> <span id="modalDescription"></span></p>
         <p><strong>Status:</strong> <span id="modalStatus"></span></p>
         <p><strong>GitHub:</strong> <a id="modalGithub" target="_blank"></a></p>
