@@ -90,8 +90,8 @@ async function loadJobs() {
 
     const res = await apiRequest("/job-cards/");
 
-    // 🔥 FIX: correct response structure
-    const jobs = res?.data?.data || [];
+    // ✅ FIX: correct structure (same as tasks)
+    const jobs = res?.data || [];
 
     const table = document.getElementById("jobsTable");
     table.innerHTML = "";
@@ -115,7 +115,6 @@ async function loadJobs() {
         table.appendChild(row);
     });
 }
-
 // ==========================
 // CHARTS
 // ==========================
