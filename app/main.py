@@ -94,14 +94,16 @@ def protected_route(current_user=Depends(get_current_user)):
 # ==========================
 # HTTP EXCEPTION HANDLER
 # ==========================
-@app.exception_handler(HTTPException)
-async def http_exception_handler(request: Request, exc: HTTPException):
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    print("🔥 REAL ERROR:", exc)  # 👈 THIS IS KEY
+
     return JSONResponse(
-        status_code=exc.status_code,
+        status_code=500,
         content={
             "success": False,
             "data": None,
-            "message": exc.detail
+            "message": str(exc)  # 👈 SHOW REAL ERROR
         },
     )
 
