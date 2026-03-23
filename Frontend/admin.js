@@ -61,34 +61,45 @@ data:{labels:["Completed","Progress","Pending"],datasets:[{data:[c,p,d]}]}
 }
 
 // TASKS
-function renderTasks(tasks){
+async function loadAllTasks() {
 
-tasksTable.innerHTML="";
+    const res = await apiRequest("/tasks/");
+    const tasks = res?.data || [];
 
-tasks.forEach(t=>{
-tasksTable.innerHTML+=`
-<tr>
-<td>${t.title}</td>
-<td>${t.status}</td>
-<td><button onclick='viewTask(${JSON.stringify(t)})'>View</button></td>
-</tr>`;
-});
+    const tbody = document.querySelector("#adminTasksTable tbody");
+    tbody.innerHTML = "";
+
+    tasks.forEach(task => {
+
+        const row = document.createElement("tr");
+
+        row.innerHTML = `
+            <td>${task.title}</td>
+            <td>${task.description || "N/A"}</td>
+            <td>${task.owner_name || "N/A"}</td>
+            <td>${getStatusBadge(task.status)}</td>
+            <td>${formatDate(task.created_at)}</td>
+            <td>${formatDuration(task.time_taken)}</td>
+        `;
+
+        tbody.appendChild(row);
+    });
 }
 
 // JOBS
 function renderJobs(jobs){
 
-jobsTable.innerHTML="";
+    const tbody = document.getElementById("jobsTable");
+    tbody.innerHTML = "";
 
-jobs.forEach(j=>{
-jobsTable.innerHTML+=`
-<tr>
-<td>${j.id}</td>
-<td>${j.title}</td>
-<td>${j.status}</td>
-<td><button>View</button></td>
-</tr>`;
-});
+    jobs.forEach(job=>{
+        tbody.innerHTML += `
+        <tr>
+            <td>${job.id}</td>
+            <td>${job.title}</td>
+            <td>${job.status}</td>
+        </tr>`;
+    });
 }
 
 // MODAL
@@ -114,4 +125,24 @@ jobs:jobsSection
 };
 
 map[section]?.scrollIntoView({behavior:"smooth"});
+}
+
+function formatDate(date) {
+    return date ? new Date(date).toLocaleString() : "N/A";
+}
+
+function formatDuration(seconds) {
+    if (!seconds) return "0 min";
+
+    const mins = Math.floor(seconds / 60);
+    const hrs = Math.floor(mins / 60);
+
+    return hrs > 0 ? `${hrs}h ${mins % 60}m` : `${mins} min`;
+}
+
+function getStatusBadge(status) {
+    if (status === "Pending") return `<span class="badge pending">Pending</span>`;
+    if (status === "In Progress") return `<span class="badge progress">In Progress</span>`;
+    if (status === "Completed") return `<span class="badge completed">Completed</span>`;
+    return status;
 }
