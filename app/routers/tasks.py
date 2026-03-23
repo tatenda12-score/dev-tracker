@@ -50,20 +50,43 @@ def get_my_tasks(
 # ==========================
 # GET ALL TASKS (ADMIN)
 # ==========================
+from app.models import Task, User
+
+# ==========================
+# ADMIN: GET ALL TASKS
+# ==========================
 @router.get("/")
 def get_all_tasks(
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     if current_user.role != "ADMIN":
-        raise HTTPException(status_code=403, detail="Admin only")
+        raise HTTPException(status_code=403, detail="Not authorized")
 
-    tasks = db.query(models.Task)\
-        .order_by(models.Task.id.desc())\
-        .all()
+    tasks = db.query(Task).order_by(Task.id.desc()).all()
 
-    return {"success": True, "data": [serialize_task(t) for t in tasks]}
+    result = []
 
+    for task in tasks:
+        owner = db.query(User).filter(User.id == task.owner_id).first()
+
+        result.append({
+            "id": task.id,
+            "title": task.title,
+            "description": task.description,
+            "status": task.status,
+            "github_link": task.github_link,
+
+            "owner_name": owner.name if owner else "Unknown",
+
+            "created_at": task.created_at,
+            "time_taken": task.time_taken
+        })
+
+    return {
+        "success": True,
+        "data": result
+    }
 
 # ==========================
 # START TASK
@@ -270,3 +293,5 @@ def get_my_dashboard(
             "hours": total_hours
         }
     }
+    
+    

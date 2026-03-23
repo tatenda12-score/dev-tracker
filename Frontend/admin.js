@@ -184,6 +184,52 @@ async function loadUsersForJobDropdown(){
     });
 }
 
+async function loadAllTasks() {
+
+    const res = await apiRequest("/tasks/");
+    const tasks = res?.data || [];
+
+    const tbody = document.querySelector("#adminTasksTable tbody");
+    tbody.innerHTML = "";
+
+    tasks.forEach(task => {
+
+        const row = document.createElement("tr");
+
+        row.innerHTML = `
+            <td>${task.id}</td>
+            <td>${task.owner_name}</td>
+            <td>${task.title}</td>
+            <td>${task.description || "N/A"}</td>
+            <td>${getStatusBadge(task.status)}</td>
+            <td>${task.github_link || "N/A"}</td>
+            <td>${formatDate(task.created_at)}</td>
+            <td>${formatDuration(task.time_taken)}</td>
+        `;
+
+        tbody.appendChild(row);
+    });
+}
+
+function formatDate(date) {
+    if (!date) return "N/A";
+    return new Date(date).toLocaleString();
+}
+
+function formatDuration(seconds) {
+    if (!seconds) return "0 min";
+
+    const mins = Math.floor(seconds / 60);
+    const hrs = Math.floor(mins / 60);
+    const remaining = mins % 60;
+
+    if (hrs > 0) {
+        return `${hrs}h ${remaining}m`;
+    }
+
+    return `${mins} min`;
+}
+
 async function submitJob(){
 
     const title = document.getElementById("jobService").value;
@@ -228,3 +274,4 @@ getCurrentUser();
 loadAdminNotifications();
 
 setInterval(loadAdminNotifications, 5000);
+document.addEventListener("DOMContentLoaded", loadAllTasks);
