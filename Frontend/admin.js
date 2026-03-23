@@ -61,10 +61,7 @@ data:{labels:["Completed","Progress","Pending"],datasets:[{data:[c,p,d]}]}
 }
 
 // TASKS
-async function loadAllTasks() {
-
-    const res = await apiRequest("/tasks/");
-    const tasks = res?.data || [];
+function renderTasks(tasks){
 
     const tbody = document.querySelector("#adminTasksTable tbody");
     tbody.innerHTML = "";
@@ -77,7 +74,7 @@ async function loadAllTasks() {
             <td>${task.title}</td>
             <td>${task.description || "N/A"}</td>
             <td>${task.owner_name || "N/A"}</td>
-            <td>${getStatusBadge(task.status)}</td>
+            <td>${task.status}</td>
             <td>${formatDate(task.created_at)}</td>
             <td>${formatDuration(task.time_taken)}</td>
         `;
@@ -85,7 +82,6 @@ async function loadAllTasks() {
         tbody.appendChild(row);
     });
 }
-
 // JOBS
 function renderJobs(jobs){
 
