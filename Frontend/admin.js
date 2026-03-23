@@ -1,144 +1,268 @@
+// ==========================
+// 🔥 API CONFIG
+// ==========================
 const API = "https://dev-tracker-yfvj.onrender.com";
 const token = localStorage.getItem("token");
 
-async function apiRequest(endpoint){
-const res = await fetch(API+endpoint,{
-headers:{Authorization:`Bearer ${token}`}
-});
-return await res.json();
+// ==========================
+// 🔥 API HELPER
+// ==========================
+async function apiRequest(endpoint, method = "GET", data = null) {
+    try {
+        const res = await fetch(API + endpoint, {
+            method,
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
+            body: data ? JSON.stringify(data) : null
+        });
+
+        if (res.status === 401) {
+            alert("Session expired. Login again.");
+            logout();
+            return null;
+        }
+
+        return await res.json();
+
+    } catch (err) {
+        console.error("API Error:", err);
+        alert("Network error");
+        return null;
+    }
 }
 
-document.addEventListener("DOMContentLoaded", loadDashboard);
+// ==========================
+// 👤 USER INFO
+// ==========================
+async function getCurrentUser() {
+    const res = await apiRequest("/auth/me");
 
-async function loadDashboard(){
-
-const tasksRes = await apiRequest("/tasks/");
-const jobsRes = await apiRequest("/job-cards/");
-
-const tasks = tasksRes.data || [];
-const jobs = jobsRes.data || [];
-
-loadKPIs(tasks);
-loadCharts(tasks);
-renderTasks(tasks);
-renderJobs(jobs);
+    document.getElementById("adminName").innerText =
+        "Logged in as: " + (res?.data?.name || "Admin");
 }
 
-// KPI
-function loadKPIs(tasks){
+// ==========================
+// 📊 KPI DASHBOARD
+// ==========================
+async function loadAdminKPIs() {
 
-totalTasks.innerText = tasks.length;
+    const tasksRes = await apiRequest("/tasks/");
+    const jobsRes = await apiRequest("/job-cards/");
 
-completedTasks.innerText =
-tasks.filter(t=>t.status==="Completed").length;
+    const tasks = tasksRes?.data || [];
+    const jobs = jobsRes?.data || [];
 
-inProgressTasks.innerText =
-tasks.filter(t=>t.status==="In Progress").length;
+    document.getElementById("totalJobs").innerText = jobs.length;
 
-const seconds = tasks.reduce((s,t)=>s+(t.time_taken||0),0);
-hoursWorked.innerText = (seconds/3600).toFixed(1)+"h";
+    document.getElementById("activeTasks").innerText =
+        tasks.filter(t => t.status === "In Progress").length;
+
+    document.getElementById("completedTasks").innerText =
+        tasks.filter(t => t.status === "Completed").length;
+
+    document.getElementById("overdueTasks").innerText =
+        tasks.filter(t => t.status === "Pending").length;
 }
 
-// CHARTS
-function loadCharts(tasks){
+// ==========================
+// 🔔 NOTIFICATIONS
+// ==========================
+async function loadAdminNotifications(){
+    const panel = document.getElementById("notificationsPanel");
+    if (!panel) return;
 
-const c = tasks.filter(t=>t.status==="Completed").length;
-const p = tasks.filter(t=>t.status==="In Progress").length;
-const d = tasks.filter(t=>t.status==="Pending").length;
+    const response = await apiRequest("/tasks/notifications");
+    const notifications = response?.data || [];
 
-if(window.pie) pie.destroy();
-if(window.bar) bar.destroy();
+    panel.innerHTML = "";
 
-window.pie = new Chart(pieChart,{
-type:"pie",
-data:{labels:["Completed","Progress","Pending"],datasets:[{data:[c,p,d]}]}
-});
-
-window.bar = new Chart(barChart,{
-type:"bar",
-data:{labels:["Completed","Progress","Pending"],datasets:[{data:[c,p,d]}]}
-});
+    notifications.forEach(n => {
+        panel.innerHTML += `<div class="notif-item">${n.message}</div>`;
+    });
 }
 
-// TASKS
-function renderTasks(tasks){
+// ==========================
+// 📝 ASSIGN TASK MODAL
+// ==========================
+function openAssignModal(){
+    document.getElementById("assignModal").style.display = "block";
+    loadUsersForDropdown();
+}
+
+function closeAssignModal(){
+    document.getElementById("assignModal").style.display = "none";
+}
+
+async function loadUsersForDropdown(){
+    const res = await apiRequest("/users/");
+    const users = res?.data || [];
+
+    const select = document.getElementById("taskUser");
+    select.innerHTML = "";
+
+    users.forEach(u => {
+        if(u.role !== "ADMIN"){
+            select.innerHTML += `<option value="${u.id}">${u.name}</option>`;
+        }
+    });
+}
+
+async function submitTask(){
+    const title = taskTitle.value;
+    const description = taskDescription.value;
+    const owner_id = taskUser.value;
+
+    await apiRequest("/tasks/assign-task", "POST", {
+        title,
+        description,
+        owner_id: parseInt(owner_id)
+    });
+
+    closeAssignModal();
+    refreshAll();
+}
+
+// ==========================
+// 🧰 CREATE JOB MODAL
+// ==========================
+function openJobModal(){
+    document.getElementById("jobModal").style.display = "block";
+    loadUsersForJobDropdown();
+}
+
+function closeJobModal(){
+    document.getElementById("jobModal").style.display = "none";
+}
+
+async function loadUsersForJobDropdown(){
+    const res = await apiRequest("/users/");
+    const users = res?.data || [];
+
+    const select = document.getElementById("jobUser");
+    select.innerHTML = "";
+
+    users.forEach(u => {
+        if(u.role !== "ADMIN"){
+            select.innerHTML += `<option value="${u.id}">${u.name}</option>`;
+        }
+    });
+}
+
+async function submitJob(){
+    const title = jobService.value;
+    const description = jobDescription.value;
+    const owner_id = jobUser.value;
+
+    await apiRequest("/job-cards/", "POST", {
+        title,
+        description,
+        owner_id: parseInt(owner_id)
+    });
+
+    closeJobModal();
+    refreshAll();
+}
+
+// ==========================
+// 📋 TASK TABLE
+// ==========================
+async function loadAllTasks() {
+
+    const res = await apiRequest("/tasks/");
+    let tasks = res?.data || [];
+
+    // 🔥 SORT latest first
+    tasks.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
 
     const tbody = document.querySelector("#adminTasksTable tbody");
+    if (!tbody) return;
+
     tbody.innerHTML = "";
 
     tasks.forEach(task => {
-
-        const row = document.createElement("tr");
-
-        row.innerHTML = `
+        tbody.innerHTML += `
+        <tr>
+            <td>${task.id}</td>
+            <td>${task.owner_name || "N/A"}</td>
             <td>${task.title}</td>
             <td>${task.description || "N/A"}</td>
-            <td>${task.owner_name || "N/A"}</td>
             <td>${task.status}</td>
+            <td>${task.github_link || "-"}</td>
             <td>${formatDate(task.created_at)}</td>
             <td>${formatDuration(task.time_taken)}</td>
-        `;
-
-        tbody.appendChild(row);
+        </tr>`;
     });
 }
-// JOBS
-function renderJobs(jobs){
 
-    const tbody = document.getElementById("jobsTable");
+// ==========================
+// 📋 JOB CARDS TABLE
+// ==========================
+async function loadAllJobs(){
+
+    const res = await apiRequest("/job-cards/");
+    let jobs = res?.data || [];
+
+    jobs.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+
+    const tbody = document.querySelector("#jobsTable tbody");
+    if (!tbody) return;
+
     tbody.innerHTML = "";
 
-    jobs.forEach(job=>{
+    jobs.forEach(job => {
         tbody.innerHTML += `
         <tr>
             <td>${job.id}</td>
             <td>${job.title}</td>
             <td>${job.status}</td>
+            <td>${formatDate(job.created_at)}</td>
+            <td>${formatDuration(job.time_taken)}</td>
         </tr>`;
     });
 }
 
-// MODAL
-function viewTask(t){
-modalTitle.innerText=t.title;
-modalDescription.innerText=t.description;
-modalStatus.innerText=t.status;
-modalTime.innerText=(t.time_taken||0)+" sec";
-taskModal.style.display="flex";
-}
-
-function closeModal(){
-taskModal.style.display="none";
-}
-
-// NAV
-function scrollToSection(section){
-
-const map={
-dashboard:document.querySelector(".kpi"),
-tasks:tasksSection,
-jobs:jobsSection
-};
-
-map[section]?.scrollIntoView({behavior:"smooth"});
-}
-
-function formatDate(date) {
+// ==========================
+// 🧠 HELPERS
+// ==========================
+function formatDate(date){
     return date ? new Date(date).toLocaleString() : "N/A";
 }
 
-function formatDuration(seconds) {
-    if (!seconds) return "0 min";
-
-    const mins = Math.floor(seconds / 60);
-    const hrs = Math.floor(mins / 60);
-
-    return hrs > 0 ? `${hrs}h ${mins % 60}m` : `${mins} min`;
+function formatDuration(seconds){
+    if(!seconds) return "0 min";
+    const mins = Math.floor(seconds/60);
+    const hrs = Math.floor(mins/60);
+    return hrs>0 ? `${hrs}h ${mins%60}m` : `${mins} min`;
 }
 
-function getStatusBadge(status) {
-    if (status === "Pending") return `<span class="badge pending">Pending</span>`;
-    if (status === "In Progress") return `<span class="badge progress">In Progress</span>`;
-    if (status === "Completed") return `<span class="badge completed">Completed</span>`;
-    return status;
+// ==========================
+// 🔄 REFRESH
+// ==========================
+function refreshAll(){
+    loadAdminKPIs();
+    loadAllTasks();
+    loadAllJobs();
 }
+
+// ==========================
+// 🚪 LOGOUT
+// ==========================
+function logout(){
+    localStorage.clear();
+    window.location.href = "login.html";
+}
+
+// ==========================
+// 🚀 START
+// ==========================
+document.addEventListener("DOMContentLoaded", ()=>{
+    getCurrentUser();
+    loadAdminKPIs();
+    loadAdminNotifications();
+    loadAllTasks();
+    loadAllJobs();
+});
+
+setInterval(loadAdminNotifications, 5000);
