@@ -348,7 +348,7 @@ function viewJob(job) {
             </button>
         `;
     }
-    else if (job.status === "Open") {
+    else if (job.status === "Open" || job.status === "In Progress") {
 
         updateSection.style.display = "block";
 
@@ -391,7 +391,7 @@ async function addJobUpdate() {
         return;
     }
 
-    await apiRequest(`/job-cards/${currentJobId}/updates`, "POST", {
+    await apiRequest(`/job-cards/update/${currentJobId}`, "POST", {
         message: message
     });
 
