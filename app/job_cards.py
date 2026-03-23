@@ -249,3 +249,22 @@ def get_job_with_updates(
             ]
         }
     }
+    
+    
+    @router.put("/{job_id}/start")
+    def start_job(job_id: int, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+
+        job = db.query(models.JobCard).filter(models.JobCard.id == job_id).first()
+
+        if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
+
+        job.status = "Open"
+        job.opened_at = datetime.utcnow()
+
+        db.commit()
+
+        return {
+            "success": True,
+            "message": "Job started"
+        }
