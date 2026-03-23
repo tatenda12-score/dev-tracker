@@ -256,10 +256,10 @@ body {
 <aside class="sidebar">
     <h2>BlitzTech</h2>
     <ul>
-        <li>Dashboard</li>
-        <li>Job Cards</li>
-        <li>Tasks</li>
-        <li>Reports</li>
+        <li onclick="scrollToSection('dashboard')">Dashboard</li>
+        <li onclick="scrollToSection('jobs')">Job Cards</li>
+        <li onclick="scrollToSection('tasks')">Tasks</li>
+        <li onclick="scrollToSection('reports')">Reports</li>
     </ul>
 </aside>
 
@@ -307,7 +307,7 @@ body {
 
     <!-- CHARTS -->
     <!-- KPI SECTION ABOVE -->
-
+<div id="dashboard"></div>
 <div class="charts">
 
     <div class="chart-box">
@@ -323,9 +323,11 @@ body {
 </div>
 
     <!-- 🔥 TASK TABLE -->
+
     <div class="table-container">
 
         <h2>All Tasks</h2>
+        <div id="tasks"></div>
 
         <table id="adminTasksTable">
             <thead>
@@ -345,6 +347,7 @@ body {
 
     </div>
 
+    <div id="jobs">
     <div class="table-container">
     <h2>Job Cards</h2>
 

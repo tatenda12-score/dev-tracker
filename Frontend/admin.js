@@ -321,6 +321,15 @@ function updateCharts(completed, progress, pending) {
     pieChart.update();
 }
 
+function scrollToSection(sectionId){
+    const section = document.getElementById(sectionId);
+    if(section){
+        section.scrollIntoView({
+            behavior: "smooth"
+        });
+    }
+}
+
 // ==========================
 // 🔄 REFRESH
 // ==========================
