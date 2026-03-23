@@ -5,6 +5,12 @@ const API = "https://dev-tracker-yfvj.onrender.com";
 const token = localStorage.getItem("token");
 
 // ==========================
+// 📊 CHART VARIABLES
+// ==========================
+let barChart = null;
+let pieChart = null;
+
+// ==========================
 // 🔥 API HELPER
 // ==========================
 async function apiRequest(endpoint, method = "GET", data = null) {
@@ -56,16 +62,17 @@ async function loadAdminKPIs() {
 
     document.getElementById("totalJobs").innerText = jobs.length;
 
-    document.getElementById("activeTasks").innerText =
-        tasks.filter(t => t.status === "In Progress").length;
+    const completed = tasks.filter(t => t.status === "Completed").length;
+    const progress = tasks.filter(t => t.status === "In Progress").length;
+    const pending = tasks.filter(t => t.status === "Pending").length;
 
-    document.getElementById("completedTasks").innerText =
-        tasks.filter(t => t.status === "Completed").length;
+    document.getElementById("activeTasks").innerText = progress;
+    document.getElementById("completedTasks").innerText = completed;
+    document.getElementById("overdueTasks").innerText = pending;
 
-    document.getElementById("overdueTasks").innerText =
-        tasks.filter(t => t.status === "Pending").length;
+    // 🔥 UPDATE CHARTS HERE
+    updateCharts(completed, progress, pending);
 }
-
 // ==========================
 // 🔔 NOTIFICATIONS
 // ==========================
@@ -237,6 +244,46 @@ function formatDuration(seconds){
     return hrs>0 ? `${hrs}h ${mins%60}m` : `${mins} min`;
 }
 
+function initCharts() {
+
+    const barCanvas = document.getElementById("barChart");
+    const pieCanvas = document.getElementById("pieChart");
+
+    if (!barCanvas || !pieCanvas) return;
+
+    barChart = new Chart(barCanvas, {
+        type: "bar",
+        data: {
+            labels: ["Completed", "In Progress", "Pending"],
+            datasets: [{
+                label: "Tasks",
+                data: [0, 0, 0]
+            }]
+        }
+    });
+
+    pieChart = new Chart(pieCanvas, {
+        type: "pie",
+        data: {
+            labels: ["Completed", "In Progress", "Pending"],
+            datasets: [{
+                data: [0, 0, 0]
+            }]
+        }
+    });
+}
+
+function updateCharts(completed, progress, pending) {
+
+    if (!barChart || !pieChart) return;
+
+    barChart.data.datasets[0].data = [completed, progress, pending];
+    pieChart.data.datasets[0].data = [completed, progress, pending];
+
+    barChart.update();
+    pieChart.update();
+}
+
 // ==========================
 // 🔄 REFRESH
 // ==========================
@@ -258,6 +305,9 @@ function logout(){
 // 🚀 START
 // ==========================
 document.addEventListener("DOMContentLoaded", ()=>{
+
+    initCharts(); // 🔥 MUST COME FIRST
+
     getCurrentUser();
     loadAdminKPIs();
     loadAdminNotifications();

@@ -185,6 +185,68 @@ body {
     gap: 10px;
 }
 
+.main {
+    height: 100vh;
+    overflow-y: auto;
+}
+
+/* ===== SHARED TABLE STYLE ===== */
+.table-container {
+    background: white;
+    margin-top: 30px;
+    padding: 20px;
+    border-radius: 12px;
+    max-height: 350px;
+    overflow-y: auto;
+}
+
+/* BOTH TABLES USE SAME STYLE */
+#adminTasksTable,
+#jobsTable {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+/* HEADER */
+#adminTasksTable th,
+#jobsTable th {
+    background: #0d1b2a;
+    color: white;
+    padding: 10px;
+    text-align: left;
+    position: sticky;
+    top: 0;
+}
+
+/* BODY */
+#adminTasksTable td,
+#jobsTable td {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+/* HOVER EFFECT */
+#adminTasksTable tr:hover,
+#jobsTable tr:hover {
+    background: #f1f5f9;
+}
+
+/* Apply to BOTH description fields */
+#taskDescription,
+#jobDescription {
+    width: 100%;
+    min-height: 130px;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    resize: vertical;
+    margin-top: 10px;
+}
+
+/* Make textarea span full width in grid */
+.form-grid textarea {
+    grid-column: span 2;
+}
 </style>
 </head>
 
@@ -246,17 +308,21 @@ body {
     </div>
 
     <!-- CHARTS -->
-    <div class="charts">
-        <div class="chart-box">
-            <h3>Tasks Completed</h3>
-            <canvas id="barChart"></canvas>
-        </div>
+    <!-- KPI SECTION ABOVE -->
 
-        <div class="chart-box">
-            <h3>Job Status</h3>
-            <canvas id="pieChart"></canvas>
-        </div>
+<div class="charts">
+
+    <div class="chart-box">
+        <h3>Tasks Completed</h3>
+        <canvas id="barChart"></canvas>
     </div>
+
+    <div class="chart-box">
+        <h3>Task Status</h3>
+        <canvas id="pieChart"></canvas>
+    </div>
+
+</div>
 
     <!-- 🔥 TASK TABLE -->
     <div class="table-container">
@@ -280,6 +346,23 @@ body {
         </table>
 
     </div>
+
+    <div class="table-container">
+    <h2>Job Cards</h2>
+
+    <table id="jobsTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>Duration</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
 
 </main>
 </div>
@@ -306,7 +389,7 @@ body {
             <input type="date" id="taskDeadline">
         </div>
 
-        <textarea id="taskDescription" placeholder="Task Description"></textarea>
+        <textarea id="taskDescription" placeholder="Task Description" rows="5"></textarea>
 
         <div class="modal-footer">
             <button onclick="closeAssignModal()">Cancel</button>
@@ -326,11 +409,7 @@ body {
         <div class="form-grid">
             <input id="jobCustomer" placeholder="Customer Name">
             <input id="jobContact" placeholder="Contact">
-            <select id="jobService">
-                <option>Electronics Repair</option>
-                <option>Solar Installation</option>
-                <option>Maintenance</option>
-            </select>
+            <input id="jobService" placeholder="Enter Service (e.g. Electronics Repair)">
             <select id="jobPriority">
                 <option>Low</option>
                 <option selected>Medium</option>
@@ -340,7 +419,7 @@ body {
             <input type="date" id="jobDeadline">
         </div>
 
-        <textarea id="jobDescription" placeholder="Job Description"></textarea>
+        <textarea id="jobDescription" placeholder="Job Description" rows="5"></textarea>
 
         <div class="modal-footer">
             <button onclick="closeJobModal()">Cancel</button>
