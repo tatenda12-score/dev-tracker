@@ -320,6 +320,7 @@ function formatTime(seconds) {
 }
 
 function viewJob(job) {
+    const actions = document.getElementById("jobActions");
 
     currentJobId = job.id;
 
