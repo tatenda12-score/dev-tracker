@@ -1,277 +1,117 @@
-// ==========================
-// 🔥 API CONFIG
-// ==========================
 const API = "https://dev-tracker-yfvj.onrender.com";
 const token = localStorage.getItem("token");
 
-
-// ==========================
-// 🔥 API HELPER
-// ==========================
-async function apiRequest(endpoint, method = "GET", data = null) {
-    try {
-        const res = await fetch(API + endpoint, {
-            method,
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`
-            },
-            body: data ? JSON.stringify(data) : null
-        });
-
-        if (res.status === 401) {
-            alert("Session expired. Login again.");
-            logout();
-            return null;
-        }
-
-        return await res.json();
-
-    } catch (err) {
-        console.error("API Error:", err);
-        alert("Network error");
-        return null;
-    }
+async function apiRequest(endpoint){
+const res = await fetch(API+endpoint,{
+headers:{Authorization:`Bearer ${token}`}
+});
+return await res.json();
 }
 
+document.addEventListener("DOMContentLoaded", loadDashboard);
 
-// ==========================
-// 👤 USER INFO
-// ==========================
-async function getCurrentUser() {
-    const res = await apiRequest("/auth/me");
+async function loadDashboard(){
 
-    document.getElementById("adminName").innerText =
-        "Logged in as: " + (res?.data?.name || "Admin");
+const tasksRes = await apiRequest("/tasks/");
+const jobsRes = await apiRequest("/job-cards/");
+
+const tasks = tasksRes.data || [];
+const jobs = jobsRes.data || [];
+
+loadKPIs(tasks);
+loadCharts(tasks);
+renderTasks(tasks);
+renderJobs(jobs);
 }
 
+// KPI
+function loadKPIs(tasks){
 
-// ==========================
-// 📊 KPI DASHBOARD
-// ==========================
-async function loadAdminKPIs() {
+totalTasks.innerText = tasks.length;
 
-    const tasksRes = await apiRequest("/tasks/");
-    const jobsRes = await apiRequest("/job-cards/");
+completedTasks.innerText =
+tasks.filter(t=>t.status==="Completed").length;
 
-    const tasks = tasksRes?.data || [];
-    const jobs = jobsRes?.data || [];
+inProgressTasks.innerText =
+tasks.filter(t=>t.status==="In Progress").length;
 
-    document.getElementById("totalJobs").innerText = jobs.length;
-
-    document.getElementById("activeTasks").innerText =
-        tasks.filter(t => t.status === "In Progress").length;
-
-    document.getElementById("completedTasks").innerText =
-        tasks.filter(t => t.status === "Completed").length;
-
-    document.getElementById("overdueTasks").innerText =
-        tasks.filter(t => t.status === "Pending").length;
+const seconds = tasks.reduce((s,t)=>s+(t.time_taken||0),0);
+hoursWorked.innerText = (seconds/3600).toFixed(1)+"h";
 }
 
+// CHARTS
+function loadCharts(tasks){
 
-// ==========================
-// 🔔 NOTIFICATIONS
-// ==========================
-async function loadAdminNotifications(){
+const c = tasks.filter(t=>t.status==="Completed").length;
+const p = tasks.filter(t=>t.status==="In Progress").length;
+const d = tasks.filter(t=>t.status==="Pending").length;
 
-    const panel = document.getElementById("notificationsPanel");
-    if (!panel) return;
+if(window.pie) pie.destroy();
+if(window.bar) bar.destroy();
 
-    const response = await apiRequest("/tasks/notifications");
-    const notifications = response?.data || [];
+window.pie = new Chart(pieChart,{
+type:"pie",
+data:{labels:["Completed","Progress","Pending"],datasets:[{data:[c,p,d]}]}
+});
 
-    panel.innerHTML = "";
-
-    notifications.forEach(n => {
-        panel.innerHTML += `<div class="notif-item">${n.message}</div>`;
-    });
+window.bar = new Chart(barChart,{
+type:"bar",
+data:{labels:["Completed","Progress","Pending"],datasets:[{data:[c,p,d]}]}
+});
 }
 
-async function toggleNotifications() {
+// TASKS
+function renderTasks(tasks){
 
-    const panel = document.getElementById("notificationsPanel");
+tasksTable.innerHTML="";
 
-    if (panel.style.display === "block") {
-        panel.style.display = "none";
-        return;
-    }
-
-    panel.style.display = "block";
-
-    await apiRequest("/tasks/notifications/read", "PUT");
-
-    document.getElementById("notifCount").innerText = 0;
-    loadAdminNotifications();
+tasks.forEach(t=>{
+tasksTable.innerHTML+=`
+<tr>
+<td>${t.title}</td>
+<td>${t.status}</td>
+<td><button onclick='viewTask(${JSON.stringify(t)})'>View</button></td>
+</tr>`;
+});
 }
 
+// JOBS
+function renderJobs(jobs){
 
-// ==========================
-// 📝 ASSIGN TASK MODAL
-// ==========================
-function openAssignModal(){
-    document.getElementById("assignModal").style.display = "block";
-    loadUsersForDropdown();
+jobsTable.innerHTML="";
+
+jobs.forEach(j=>{
+jobsTable.innerHTML+=`
+<tr>
+<td>${j.id}</td>
+<td>${j.title}</td>
+<td>${j.status}</td>
+<td><button>View</button></td>
+</tr>`;
+});
 }
 
-function closeAssignModal(){
-    document.getElementById("assignModal").style.display = "none";
+// MODAL
+function viewTask(t){
+modalTitle.innerText=t.title;
+modalDescription.innerText=t.description;
+modalStatus.innerText=t.status;
+modalTime.innerText=(t.time_taken||0)+" sec";
+taskModal.style.display="flex";
 }
 
-async function loadUsersForDropdown(){
-
-    const res = await apiRequest("/users/");
-    const users = res?.data || [];
-
-    const select = document.getElementById("taskUser");
-    select.innerHTML = "";
-
-    users.forEach(u => {
-        if(u.role !== "ADMIN"){
-            select.innerHTML += `<option value="${u.id}">${u.name}</option>`;
-        }
-    });
+function closeModal(){
+taskModal.style.display="none";
 }
 
-async function submitTask(){
+// NAV
+function scrollToSection(section){
 
-    const title = document.getElementById("taskTitle").value;
-    const description = document.getElementById("taskDescription").value;
-    const owner_id = document.getElementById("taskUser").value;
+const map={
+dashboard:document.querySelector(".kpi"),
+tasks:tasksSection,
+jobs:jobsSection
+};
 
-    if(!title || !description){
-        alert("Fill all fields");
-        return;
-    }
-
-    await apiRequest("/tasks/assign-task", "POST", {
-        title,
-        description,
-        owner_id: parseInt(owner_id)
-    });
-
-    alert("Task assigned successfully");
-
-    closeAssignModal();
-    loadAdminKPIs();
+map[section]?.scrollIntoView({behavior:"smooth"});
 }
-
-
-// ==========================
-// 🧰 CREATE JOB MODAL
-// ==========================
-function openJobModal(){
-    document.getElementById("jobModal").style.display = "block";
-    loadUsersForJobDropdown();
-}
-
-function closeJobModal(){
-    document.getElementById("jobModal").style.display = "none";
-}
-
-async function loadUsersForJobDropdown(){
-
-    const res = await apiRequest("/users/");
-    const users = res?.data || [];
-
-    const select = document.getElementById("jobUser");
-    select.innerHTML = "";
-
-    users.forEach(u => {
-        if(u.role !== "ADMIN"){
-            select.innerHTML += `<option value="${u.id}">${u.name}</option>`;
-        }
-    });
-}
-
-async function loadAllTasks() {
-
-    const res = await apiRequest("/tasks/");
-    const tasks = res?.data || [];
-
-    const tbody = document.querySelector("#adminTasksTable tbody");
-    tbody.innerHTML = "";
-
-    tasks.forEach(task => {
-
-        const row = document.createElement("tr");
-
-        row.innerHTML = `
-            <td>${task.id}</td>
-            <td>${task.owner_name}</td>
-            <td>${task.title}</td>
-            <td>${task.description || "N/A"}</td>
-            <td>${getStatusBadge(task.status)}</td>
-            <td>${task.github_link || "N/A"}</td>
-            <td>${formatDate(task.created_at)}</td>
-            <td>${formatDuration(task.time_taken)}</td>
-        `;
-
-        tbody.appendChild(row);
-    });
-}
-
-function formatDate(date) {
-    if (!date) return "N/A";
-    return new Date(date).toLocaleString();
-}
-
-function formatDuration(seconds) {
-    if (!seconds) return "0 min";
-
-    const mins = Math.floor(seconds / 60);
-    const hrs = Math.floor(mins / 60);
-    const remaining = mins % 60;
-
-    if (hrs > 0) {
-        return `${hrs}h ${remaining}m`;
-    }
-
-    return `${mins} min`;
-}
-
-async function submitJob(){
-
-    const title = document.getElementById("jobService").value;
-    const description = document.getElementById("jobDescription").value;
-    const owner_id = document.getElementById("jobUser").value;
-
-    const customer = document.getElementById("jobCustomer").value;
-    const contact = document.getElementById("jobContact").value;
-
-    if(!title || !description || !owner_id){
-        alert("Fill all required fields");
-        return;
-    }
-
-    await apiRequest("/job-cards/", "POST", {
-        title: `${title} - ${customer}`,
-        description: `${description} | Contact: ${contact}`,
-        owner_id: parseInt(owner_id)
-    });
-
-    alert("Job created successfully");
-
-    closeJobModal();
-    loadAdminKPIs();
-}
-
-
-// ==========================
-// 🚪 LOGOUT
-// ==========================
-function logout() {
-    localStorage.clear();
-    window.location.href = "login.html";
-}
-
-
-// ==========================
-// 🚀 START
-// ==========================
-loadAdminKPIs();
-getCurrentUser();
-loadAdminNotifications();
-
-setInterval(loadAdminNotifications, 5000);
-document.addEventListener("DOMContentLoaded", loadAllTasks);
