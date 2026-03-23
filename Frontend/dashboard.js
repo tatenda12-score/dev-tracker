@@ -373,7 +373,7 @@ function closeJobModal() {
 }
 
 async function startJob(id) {
-    await apiRequest(`/job-cards/${id}/start`, "PUT");
+    await apiRequest(`/job-cards/open/${id}`, "PUT"); 
     loadDashboard();
 }
 
