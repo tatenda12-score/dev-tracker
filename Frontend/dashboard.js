@@ -334,7 +334,25 @@ function viewJob(job) {
     document.getElementById("jobOpened").innerText = job.opened_at || "N/A";
     document.getElementById("jobClosed").innerText = job.closed_at || "N/A";
 
-    const actions = document.getElementById("jobActions");
+    if (job.status === "Pending") {
+
+    actions.innerHTML = `
+        <button class="btn btn-start" onclick="startJob(${job.id}); closeJobModal();">
+            Start Job
+        </button>
+    `;
+}
+else if (job.status === "Open") {
+
+    actions.innerHTML = `
+        <button class="btn btn-update" onclick="closeJob(${job.id}); closeJobModal();">
+            Close Job
+        </button>
+    `;
+}
+else {
+    actions.innerHTML = "";
+}
     const updateSection = document.getElementById("jobUpdateSection");
 
     // 🔥 STATUS LOGIC

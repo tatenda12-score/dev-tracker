@@ -172,6 +172,7 @@ def add_job_update(
 # ==========================
 # CLOSE JOB (USER)
 # ==========================
+
 @router.put("/close/{job_id}")
 def close_job_card(
     job_id: int,
@@ -186,33 +187,23 @@ def close_job_card(
     if job.owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not allowed")
 
-    if job.status != "Open":
-        raise HTTPException(status_code=400, detail="Job must be open")
-
-    job.closed_at = datetime.now(timezone.utc)
     job.status = "Closed"
+    job.closed_at = datetime.utcnow()
 
-    if job.opened_at:
-        job.duration = (job.closed_at - job.opened_at).total_seconds()
-
-    # 🔔 notify admins
-    admins = db.query(User).filter(User.role == "ADMIN").all()
-
-    for admin in admins:
-        notification = Notification(
-            message=f"{current_user.name} closed job: {job.title}",
-            user_id=admin.id,
-            sender_id=current_user.id,
-            is_read=False,
-            created_at=datetime.utcnow()
-        )
-        db.add(notification)
+    # 🔥 FIX HERE
+    if job.opened_at and job.closed_at:
+        job.duration = (
+            job.closed_at.replace(tzinfo=None) -
+            job.opened_at.replace(tzinfo=None)
+        ).total_seconds()
 
     db.commit()
+    db.refresh(job)
 
-    return {"success": True, "message": "Job closed"}
-
-
+    return {
+        "success": True,
+        "message": "Job closed"
+    }
 # ==========================
 # GET JOB WITH UPDATES
 # ==========================

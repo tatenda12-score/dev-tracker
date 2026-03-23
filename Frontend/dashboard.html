@@ -146,28 +146,30 @@
     align-items: center;
 }
 
+#modalActions {
+    margin-top: 20px;
+    align-self: flex-end;
+}
+
 .modal-content {
+    position: relative;
     background: white;
     padding: 20px;
     border-radius: 10px;
     width: 400px;
     display: flex;
     flex-direction: column;
-    position: relative;
 }
 
 .close {
     position: absolute;
     top: 10px;
     right: 15px;
-    font-size: 24px;
-    cursor: pointer;
+    font-size: 26px;
     font-weight: bold;
-}
-
-#modalActions {
-    margin-top: 20px;
-    align-self: flex-end;
+    cursor: pointer;
+    color: black;
+    z-index: 10;
 }
     </style>
 </head>
