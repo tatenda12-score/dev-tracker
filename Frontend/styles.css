@@ -571,4 +571,8 @@ button:hover{
     .dashboard-sidebar {
         display: none;
     }
+
+    .chart-box {
+    height: 300px;
+}
 }

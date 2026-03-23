@@ -251,24 +251,59 @@ function initCharts() {
 
     if (!barCanvas || !pieCanvas) return;
 
+    // 🔥 BAR CHART (MODERN)
     barChart = new Chart(barCanvas, {
         type: "bar",
         data: {
             labels: ["Completed", "In Progress", "Pending"],
             datasets: [{
                 label: "Tasks",
-                data: [0, 0, 0]
+                data: [0, 0, 0],
+                backgroundColor: [
+                    "#22c55e",  // green
+                    "#f59e0b",  // orange
+                    "#ef4444"   // red
+                ],
+                borderRadius: 8
             }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
         }
     });
 
+    // 🔥 DOUGHNUT CHART (REPLACES PIE)
     pieChart = new Chart(pieCanvas, {
-        type: "pie",
+        type: "doughnut",
         data: {
             labels: ["Completed", "In Progress", "Pending"],
             datasets: [{
-                data: [0, 0, 0]
+                data: [0, 0, 0],
+                backgroundColor: [
+                    "#22c55e",
+                    "#f59e0b",
+                    "#ef4444"
+                ]
             }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "65%", // 🔥 makes it modern doughnut
+            plugins: {
+                legend: {
+                    position: "bottom"
+                }
+            }
         }
     });
 }
@@ -277,8 +312,10 @@ function updateCharts(completed, progress, pending) {
 
     if (!barChart || !pieChart) return;
 
-    barChart.data.datasets[0].data = [completed, progress, pending];
-    pieChart.data.datasets[0].data = [completed, progress, pending];
+    const data = [completed, progress, pending];
+
+    barChart.data.datasets[0].data = data;
+    pieChart.data.datasets[0].data = data;
 
     barChart.update();
     pieChart.update();
