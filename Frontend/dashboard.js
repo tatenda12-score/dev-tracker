@@ -2,6 +2,7 @@
 // 🔐 AUTH CHECK
 // ==========================
 const token = localStorage.getItem("token");
+let currentJobId = null;
 
 if (!token) {
     window.location.href = "login.html";
@@ -129,13 +130,10 @@ async function loadJobs() {
 // CHARTS
 // ==========================
 async function loadCharts(){
-
-    const res = await apiRequest("/tasks/my-tasks");
-    const tasks = res?.data || [];
-
-    const completed = tasks.filter(t => t.status === "Completed").length;
-    const inProgress = tasks.filter(t => t.status === "In Progress").length;
-    const pending = tasks.filter(t => t.status === "Pending").length;
+    const res = await apiRequest("/analytics/my-charts");
+    const chartData = res?.data || {};
+    const pie = chartData.pie || {};
+    const bar = chartData.bar || {};
 
     if (window.pieChartInstance) {
         window.pieChartInstance.destroy();
@@ -148,23 +146,37 @@ async function loadCharts(){
     window.pieChartInstance = new Chart(document.getElementById("pieChart"), {
         type: "pie",
         data: {
-            labels: ["Completed", "In Progress", "Pending"],
+            labels: pie.labels || ["Completed", "In Progress", "Pending"],
             datasets: [{
-                data: [completed, inProgress, pending]
+                data: pie.data || [0, 0, 0]
             }]
         }
     });
 
-    const weekly = [1, 2, 3, 2, 4];
-
     window.barChartInstance = new Chart(document.getElementById("barChart"), {
         type: "bar",
         data: {
-            labels: ["Mon","Tue","Wed","Thu","Fri"],
+            labels: bar.labels || [],
             datasets: [{
-                label: "Tasks",
-                data: weekly
+                label: "Tasks Completed",
+                data: bar.tasks || [],
+                backgroundColor: "rgba(59, 130, 246, 0.45)",
+                borderColor: "#2563eb",
+                borderWidth: 1,
+                borderRadius: 8
             }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0
+                    }
+                }
+            }
         }
     });
 }
@@ -174,23 +186,38 @@ async function loadCharts(){
 // PERFORMANCE
 // ==========================
 async function loadPerformance() {
+    const res = await apiRequest("/analytics/my-charts");
+    const line = res?.data?.line || {};
 
-    try {
-        const res = await apiRequest("/analytics/productivity-score");
-        const data = res?.data || {};
-
-        document.getElementById("perfCompleted").innerText =
-            data.weekly_hours || 0;
-
-        document.getElementById("avgTime").innerText =
-            ((data.weekly_hours || 0) / 7).toFixed(2) + " hrs";
-
-        document.getElementById("efficiency").innerText =
-            (data.productivity_score || 0) + "%";
-
-    } catch (err) {
-        console.log("Performance API not working yet");
+    if (window.performanceChartInstance) {
+        window.performanceChartInstance.destroy();
     }
+
+    window.performanceChartInstance = new Chart(document.getElementById("performanceChart"), {
+        type: "line",
+        data: {
+            labels: line.labels || [],
+            datasets: [{
+                label: "Hours Worked",
+                data: line.hours || [],
+                borderColor: "#0ea5e9",
+                backgroundColor: "rgba(14, 165, 233, 0.15)",
+                fill: true,
+                tension: 0.35,
+                pointRadius: 4,
+                pointHoverRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
 }
 
 

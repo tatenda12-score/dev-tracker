@@ -14,6 +14,42 @@ router = APIRouter(
     tags=["Analytics"]
 )
 
+
+def build_user_daily_chart(db: Session, user_id: int, days: int = 7):
+    today = now_harare()
+    labels = []
+    task_counts = []
+    hour_totals = []
+
+    for i in range(days - 1, -1, -1):
+        day = today - timedelta(days=i)
+        start_of_day = day.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_of_day = day.replace(hour=23, minute=59, second=59, microsecond=999999)
+
+        tasks_completed = db.query(func.count(models.Task.id)).filter(
+            models.Task.owner_id == user_id,
+            models.Task.completed_at != None,
+            models.Task.completed_at >= start_of_day,
+            models.Task.completed_at <= end_of_day
+        ).scalar()
+
+        hours_completed = db.query(func.coalesce(func.sum(models.Task.hours_spent), 0)).filter(
+            models.Task.owner_id == user_id,
+            models.Task.completed_at != None,
+            models.Task.completed_at >= start_of_day,
+            models.Task.completed_at <= end_of_day
+        ).scalar()
+
+        labels.append(day.strftime("%a"))
+        task_counts.append(int(tasks_completed or 0))
+        hour_totals.append(round(float(hours_completed or 0), 2))
+
+    return {
+        "labels": labels,
+        "tasks": task_counts,
+        "hours": hour_totals
+    }
+
 # ==========================
 # 1. TOTAL HOURS (USER)
 # ==========================
@@ -137,7 +173,41 @@ def productivity_score(
 
 
 # ==========================
-# 6. DASHBOARD STATS (ADMIN UI 🔥)
+# 6. USER CHART DATA
+# ==========================
+@router.get("/my-charts")
+def get_my_charts(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    completed = db.query(models.Task).filter(
+        models.Task.owner_id == current_user.id,
+        models.Task.status == "Completed"
+    ).count()
+    in_progress = db.query(models.Task).filter(
+        models.Task.owner_id == current_user.id,
+        models.Task.status == "In Progress"
+    ).count()
+    pending = db.query(models.Task).filter(
+        models.Task.owner_id == current_user.id,
+        models.Task.status == "Pending"
+    ).count()
+
+    return {
+        "success": True,
+        "data": {
+            "pie": {
+                "labels": ["Completed", "In Progress", "Pending"],
+                "data": [completed, in_progress, pending]
+            },
+            "bar": build_user_daily_chart(db, current_user.id, days=5),
+            "line": build_user_daily_chart(db, current_user.id, days=7)
+        }
+    }
+
+
+# ==========================
+# 7. DASHBOARD STATS (ADMIN UI 🔥)
 # ==========================
 @router.get("/dashboard")
 def get_dashboard(
@@ -170,7 +240,7 @@ def get_dashboard(
 
 
 # ==========================
-# 7. CHART DATA (REAL 🔥)
+# 8. CHART DATA (REAL 🔥)
 # ==========================
 @router.get("/charts")
 def get_charts(
