@@ -30,7 +30,14 @@ async function apiRequest(endpoint, method = "GET", data = null) {
             return null;
         }
 
-        return await res.json();
+        const result = await res.json();
+
+        if (!res.ok) {
+            alert(result.detail || result.message || "Something went wrong");
+            return null;
+        }
+
+        return result;
 
     } catch (err) {
         console.error("API Error:", err);
@@ -56,22 +63,23 @@ async function loadAdminKPIs() {
 
     const tasksRes = await apiRequest("/tasks/");
     const jobsRes = await apiRequest("/job-cards/");
+    const chartsRes = await apiRequest("/analytics/charts");
 
     const tasks = tasksRes?.data || [];
     const jobs = jobsRes?.data || [];
+    const pieData = chartsRes?.pie?.data || [];
 
     document.getElementById("totalJobs").innerText = jobs.length;
 
-    const completed = tasks.filter(t => t.status === "Completed").length;
-    const progress = tasks.filter(t => t.status === "In Progress").length;
-    const pending = tasks.filter(t => t.status === "Pending").length;
+    const completed = pieData[0] ?? tasks.filter(t => t.status === "Completed").length;
+    const progress = pieData[1] ?? tasks.filter(t => t.status === "In Progress").length;
+    const pending = pieData[2] ?? tasks.filter(t => t.status === "Pending").length;
 
     document.getElementById("activeTasks").innerText = progress;
     document.getElementById("completedTasks").innerText = completed;
     document.getElementById("overdueTasks").innerText = pending;
 
-    // 🔥 UPDATE CHARTS HERE
-    updateCharts(completed, progress, pending);
+    updateCharts(chartsRes, completed, progress, pending);
 }
 // ==========================
 // 🔔 NOTIFICATIONS
@@ -121,12 +129,15 @@ async function submitTask(){
     const description = taskDescription.value;
     const owner_id = taskUser.value;
 
-    await apiRequest("/tasks/assign-task", "POST", {
+    const result = await apiRequest("/tasks/assign-task", "POST", {
         title,
         description,
         owner_id: parseInt(owner_id)
     });
 
+    if (!result) return;
+
+    alert(result.message || "Task assigned successfully");
     closeAssignModal();
     refreshAll();
 }
@@ -162,12 +173,15 @@ async function submitJob(){
     const description = jobDescription.value;
     const owner_id = jobUser.value;
 
-    await apiRequest("/job-cards/", "POST", {
+    const result = await apiRequest("/job-cards/", "POST", {
         title,
         description,
         owner_id: parseInt(owner_id)
     });
 
+    if (!result) return;
+
+    alert(result.message || "Job created successfully");
     closeJobModal();
     refreshAll();
 }
@@ -225,7 +239,7 @@ async function loadAllJobs(){
             <td>${job.title}</td>
             <td>${job.status}</td>
             <td>${formatDate(job.created_at)}</td>
-            <td>${formatDuration(job.time_taken)}</td>
+            <td>${formatDuration(job.duration)}</td>
         </tr>`;
     });
 }
@@ -308,14 +322,19 @@ function initCharts() {
     });
 }
 
-function updateCharts(completed, progress, pending) {
+function updateCharts(chartPayload, completed, progress, pending) {
 
     if (!barChart || !pieChart) return;
 
-    const data = [completed, progress, pending];
+    const pieLabels = chartPayload?.pie?.labels || ["Completed", "In Progress", "Pending"];
+    const pieData = chartPayload?.pie?.data || [completed, progress, pending];
+    const barLabels = chartPayload?.bar?.labels || ["Completed", "In Progress", "Pending"];
+    const barData = chartPayload?.bar?.data || [completed, progress, pending];
 
-    barChart.data.datasets[0].data = data;
-    pieChart.data.datasets[0].data = data;
+    barChart.data.labels = barLabels;
+    barChart.data.datasets[0].data = barData;
+    pieChart.data.labels = pieLabels;
+    pieChart.data.datasets[0].data = pieData;
 
     barChart.update();
     pieChart.update();

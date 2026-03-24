@@ -1,10 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from datetime import datetime
-
 from app.database import get_db
 from app.models import Task, Notification, User, JobCard
 from app.auth import get_current_user
+from app.time_utils import now_harare
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -52,7 +51,7 @@ def assign_task(
         owner_id=owner_id,
         assigned_by_id=admin.id,
         status="Pending",
-        created_at=datetime.utcnow()
+        created_at=now_harare()
     )
 
     db.add(new_task)
@@ -64,13 +63,13 @@ def assign_task(
         message=f"New task assigned: {title}",
         user_id=owner_id,
         sender_id=admin.id,
-        created_at=datetime.utcnow()
+        created_at=now_harare()
     )
 
     db.add(notification)
     db.commit()
 
-    return {"message": "Task assigned successfully"}
+    return {"success": True, "message": "Task assigned successfully"}
 
 
 # ==========================
@@ -93,9 +92,9 @@ def create_job_card(
         title=title,
         description=description,
         owner_id=owner_id,
-        created_by_id=admin.id,
+        assigned_by_id=admin.id,
         status="Pending",
-        created_at=datetime.utcnow()
+        created_at=now_harare()
     )
 
     db.add(new_job)
@@ -107,13 +106,13 @@ def create_job_card(
         message=f"New job assigned: {title}",
         user_id=owner_id,
         sender_id=admin.id,
-        created_at=datetime.utcnow()
+        created_at=now_harare()
     )
 
     db.add(notification)
     db.commit()
 
-    return {"message": "Job card created successfully"}
+    return {"success": True, "message": "Job created successfully"}
 
 
 # ==========================

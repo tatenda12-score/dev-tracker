@@ -1,10 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from datetime import datetime, timezone
-
 from app.database import get_db
 from app import models
 from app.auth import get_current_user
+from app.time_utils import ensure_harare, now_harare
 
 router = APIRouter(
     prefix="/tasks",
@@ -109,7 +108,7 @@ def start_task(
         return {"success": False, "message": "Already started"}
 
     task.status = "In Progress"
-    task.start_time = datetime.now(timezone.utc)
+    task.start_time = now_harare()
 
     db.commit()
 
@@ -140,19 +139,18 @@ def complete_task(
         return {"success": False, "message": "Already completed"}
 
     task.status = "Completed"
-    task.end_time = datetime.now(timezone.utc)
+    task.end_time = now_harare()
 
     # 🔥 SAFE TIME CALC
     start = task.start_time
     end = task.end_time
 
-    if start.tzinfo is None:
-        start = start.replace(tzinfo=timezone.utc)
-
-    if end.tzinfo is None:
-        end = end.replace(tzinfo=timezone.utc)
+    start = ensure_harare(start)
+    end = ensure_harare(end)
 
     task.time_taken = (end - start).total_seconds()
+    task.hours_spent = round(task.time_taken / 3600, 2)
+    task.completed_at = end
 
     # 🔔 NOTIFY ADMINS
     admins = db.query(models.User)\
@@ -165,7 +163,7 @@ def complete_task(
             user_id=admin.id,
             sender_id=current_user.id,
             is_read=False,
-            created_at=datetime.utcnow()
+            created_at=now_harare()
         ))
 
     db.commit()
@@ -198,7 +196,7 @@ def assign_task(
         assigned_by_id=current_user.id,
         status="Pending",
         github_link=data.get("github_link"),
-        created_at=datetime.utcnow()
+        created_at=now_harare()
     )
 
     db.add(task)
@@ -209,12 +207,12 @@ def assign_task(
         user_id=owner_id,
         sender_id=current_user.id,
         is_read=False,
-        created_at=datetime.utcnow()
+        created_at=now_harare()
     ))
 
     db.commit()
 
-    return {"success": True, "message": "Task assigned"}
+    return {"success": True, "message": "Task assigned successfully"}
 
 
 # ==========================

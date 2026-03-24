@@ -1,10 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from datetime import datetime, timezone
-
 from app.database import get_db
 from app.models import JobCard, JobUpdate, User, Notification
 from app.auth import get_current_user
+from app.time_utils import ensure_harare, now_harare
 
 router = APIRouter(prefix="/job-cards", tags=["Job Cards"])
 
@@ -75,7 +74,7 @@ def create_job_card(
         assigned_by_id=current_user.id,
         status="Pending",
         github_link=data.get("github_link"),
-        created_at=datetime.utcnow()
+        created_at=now_harare()
     )
 
     db.add(job)
@@ -88,7 +87,7 @@ def create_job_card(
         user_id=owner_id,
         sender_id=current_user.id,
         is_read=False,
-        created_at=datetime.utcnow()
+        created_at=now_harare()
     )
 
     db.add(notification)
@@ -96,7 +95,7 @@ def create_job_card(
 
     return {
         "success": True,
-        "message": "Job card created",
+        "message": "Job created successfully",
         "data": serialize_job(job)
     }
 
@@ -125,7 +124,7 @@ def open_job_card(
         return {"success": False, "message": "Already open"}
 
     job.status = "Open"
-    job.opened_at = datetime.now(timezone.utc)
+    job.opened_at = now_harare()
 
     db.commit()
 
@@ -160,7 +159,7 @@ def add_job_update(
     update = JobUpdate(
         job_id=job_id,
         message=message,
-        created_at=datetime.now(timezone.utc)
+        created_at=now_harare()
     )
 
     db.add(update)
@@ -188,13 +187,13 @@ def close_job_card(
         raise HTTPException(status_code=403, detail="Not allowed")
 
     job.status = "Closed"
-    job.closed_at = datetime.utcnow()
+    job.closed_at = now_harare()
 
-    # 🔥 FIX HERE
     if job.opened_at and job.closed_at:
+        opened_at = ensure_harare(job.opened_at)
+        closed_at = ensure_harare(job.closed_at)
         job.duration = (
-            job.closed_at.replace(tzinfo=None) -
-            job.opened_at.replace(tzinfo=None)
+            closed_at - opened_at
         ).total_seconds()
 
     db.commit()
@@ -251,7 +250,7 @@ def get_job_with_updates(
             raise HTTPException(status_code=404, detail="Job not found")
 
         job.status = "Open"
-        job.opened_at = datetime.utcnow()
+        job.opened_at = now_harare()
 
         db.commit()
 

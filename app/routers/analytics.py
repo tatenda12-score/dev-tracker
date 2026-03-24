@@ -1,12 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from app.database import get_db
 from app import models
 from app.auth import get_current_user
 from app.services.analytics_service import calculate_total_hours
+from app.time_utils import now_harare
 
 router = APIRouter(
     prefix="/analytics",
@@ -41,7 +42,7 @@ def weekly_summary(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
-    one_week_ago = datetime.utcnow() - timedelta(days=7)
+    one_week_ago = now_harare() - timedelta(days=7)
 
     total = db.query(func.sum(models.Task.hours_spent)) \
         .filter(models.Task.owner_id == current_user.id) \
@@ -113,7 +114,7 @@ def productivity_score(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
-    one_week_ago = datetime.utcnow() - timedelta(days=7)
+    one_week_ago = now_harare() - timedelta(days=7)
 
     total = db.query(func.sum(models.Task.hours_spent)) \
         .filter(models.Task.owner_id == current_user.id) \
@@ -179,29 +180,38 @@ def get_charts(
     if current_user.role != "ADMIN":
         raise HTTPException(status_code=403, detail="Admin only")
 
-    # Pie data
     completed = db.query(models.Task).filter(models.Task.status == "Completed").count()
     in_progress = db.query(models.Task).filter(models.Task.status == "In Progress").count()
     pending = db.query(models.Task).filter(models.Task.status == "Pending").count()
 
-    # Bar data (last 5 days)
-    today = datetime.utcnow()
-    days = []
+    today = now_harare()
+    labels = []
+    counts = []
 
     for i in range(5):
         day = today - timedelta(days=i)
+        start_of_day = day.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_of_day = day.replace(hour=23, minute=59, second=59, microsecond=999999)
 
         count = db.query(models.Task).filter(
             models.Task.created_at != None,
-            models.Task.created_at >= day.replace(hour=0, minute=0, second=0),
-            models.Task.created_at <= day.replace(hour=23, minute=59, second=59)
+            models.Task.created_at >= start_of_day,
+            models.Task.created_at <= end_of_day
         ).count()
 
-        days.append(count)
+        labels.append(day.strftime("%a"))
+        counts.append(count)
 
-    days.reverse()
+    labels.reverse()
+    counts.reverse()
 
     return {
-        "pie": [completed, in_progress, pending],
-        "bar": days
+        "pie": {
+            "labels": ["Completed", "In Progress", "Pending"],
+            "data": [completed, in_progress, pending]
+        },
+        "bar": {
+            "labels": labels,
+            "data": counts
+        }
     }

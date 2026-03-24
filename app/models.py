@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, Float, ForeignKey, Text
 from sqlalchemy.orm import relationship
 from app.database import Base
-from datetime import datetime
+from app.time_utils import now_harare
 
 
 # ==========================
@@ -16,7 +16,7 @@ class User(Base):
     password_hash = Column(String, nullable=False)
     role = Column(String, nullable=False, default="USER")
 
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=now_harare)
 
     # 🔗 Relationships
     tasks = relationship("Task", foreign_keys="Task.owner_id", back_populates="owner")
@@ -45,7 +45,7 @@ class Task(Base):
 
     status = Column(String, default="Pending", index=True)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=now_harare)
 
     start_time = Column(DateTime, nullable=True)
     end_time = Column(DateTime, nullable=True)
@@ -77,7 +77,7 @@ class JobCard(Base):
 
     status = Column(String, default="Pending", index=True)  # Pending, Open, Closed
 
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=now_harare)
     opened_at = Column(DateTime, nullable=True)
     closed_at = Column(DateTime, nullable=True)
 
@@ -101,7 +101,7 @@ class JobUpdate(Base):
     job_id = Column(Integer, ForeignKey("job_cards.id"), nullable=False)
     message = Column(Text, nullable=False)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=now_harare)
 
     # 🔗 Relationship
     job = relationship("JobCard", back_populates="updates")
@@ -118,7 +118,7 @@ class Notification(Base):
     message = Column(String, nullable=False)
     is_read = Column(Boolean, default=False, index=True)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=now_harare)
 
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     sender_id = Column(Integer, ForeignKey("users.id"), nullable=True)
