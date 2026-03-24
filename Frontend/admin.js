@@ -1,18 +1,12 @@
-// ==========================
-// 🔥 API CONFIG
-// ==========================
 const API = "https://dev-tracker-yfvj.onrender.com";
 const token = localStorage.getItem("token");
 
-// ==========================
-// 📊 CHART VARIABLES
-// ==========================
 let barChart = null;
 let pieChart = null;
+let currentAdminTaskId = null;
+let currentAdminJobId = null;
 
-// ==========================
-// 🔥 API HELPER
-// ==========================
+
 async function apiRequest(endpoint, method = "GET", data = null) {
     try {
         const res = await fetch(API + endpoint, {
@@ -38,7 +32,6 @@ async function apiRequest(endpoint, method = "GET", data = null) {
         }
 
         return result;
-
     } catch (err) {
         console.error("API Error:", err);
         alert("Network error");
@@ -46,21 +39,15 @@ async function apiRequest(endpoint, method = "GET", data = null) {
     }
 }
 
-// ==========================
-// 👤 USER INFO
-// ==========================
+
 async function getCurrentUser() {
     const res = await apiRequest("/auth/me");
-
     document.getElementById("adminName").innerText =
         "Logged in as: " + (res?.data?.name || "Admin");
 }
 
-// ==========================
-// 📊 KPI DASHBOARD
-// ==========================
-async function loadAdminKPIs() {
 
+async function loadAdminKPIs() {
     const tasksRes = await apiRequest("/tasks/");
     const jobsRes = await apiRequest("/job-cards/");
     const chartsRes = await apiRequest("/analytics/charts");
@@ -71,9 +58,9 @@ async function loadAdminKPIs() {
 
     document.getElementById("totalJobs").innerText = jobs.length;
 
-    const completed = pieData[0] ?? tasks.filter(t => t.status === "Completed").length;
-    const progress = pieData[1] ?? tasks.filter(t => t.status === "In Progress").length;
-    const pending = pieData[2] ?? tasks.filter(t => t.status === "Pending").length;
+    const completed = pieData[0] ?? tasks.filter(task => task.status === "Completed").length;
+    const progress = pieData[1] ?? tasks.filter(task => task.status === "In Progress").length;
+    const pending = pieData[2] ?? tasks.filter(task => task.status === "Pending").length;
 
     document.getElementById("activeTasks").innerText = progress;
     document.getElementById("completedTasks").innerText = completed;
@@ -81,50 +68,65 @@ async function loadAdminKPIs() {
 
     updateCharts(chartsRes, completed, progress, pending);
 }
-// ==========================
-// 🔔 NOTIFICATIONS
-// ==========================
-async function loadAdminNotifications(){
-    const panel = document.getElementById("notificationsPanel");
-    if (!panel) return;
 
+
+async function loadAdminNotifications() {
     const response = await apiRequest("/tasks/notifications");
     const notifications = response?.data || [];
+    const unreadCount = response?.meta?.unread_count || 0;
+    const panel = document.getElementById("notificationsPanel");
 
+    document.getElementById("adminNotificationCount").innerText = unreadCount;
     panel.innerHTML = "";
 
-    notifications.forEach(n => {
-        panel.innerHTML += `<div class="notif-item">${n.message}</div>`;
+    if (!notifications.length) {
+        panel.innerHTML = `<div class="notification-item">No admin notifications yet.<small>Updates will appear here.</small></div>`;
+        return;
+    }
+
+    notifications.slice(0, 8).forEach(notification => {
+        panel.innerHTML += `
+            <div class="notification-item">
+                <div>${notification.message}</div>
+                <small>${formatDate(notification.created_at)}</small>
+            </div>
+        `;
     });
 }
 
-// ==========================
-// 📝 ASSIGN TASK MODAL
-// ==========================
-function openAssignModal(){
+
+async function markAdminNotificationsRead() {
+    await apiRequest("/tasks/notifications/read", "PUT");
+    loadAdminNotifications();
+}
+
+
+function openAssignModal() {
     document.getElementById("assignModal").style.display = "block";
     loadUsersForDropdown();
 }
 
-function closeAssignModal(){
+
+function closeAssignModal() {
     document.getElementById("assignModal").style.display = "none";
 }
 
-async function loadUsersForDropdown(){
+
+async function loadUsersForDropdown() {
     const res = await apiRequest("/users/");
     const users = res?.data || [];
-
     const select = document.getElementById("taskUser");
     select.innerHTML = "";
 
-    users.forEach(u => {
-        if(u.role !== "ADMIN"){
-            select.innerHTML += `<option value="${u.id}">${u.name}</option>`;
+    users.forEach(user => {
+        if (user.role !== "ADMIN") {
+            select.innerHTML += `<option value="${user.id}">${user.name}</option>`;
         }
     });
 }
 
-async function submitTask(){
+
+async function submitTask() {
     const title = taskTitle.value;
     const description = taskDescription.value;
     const owner_id = taskUser.value;
@@ -142,33 +144,33 @@ async function submitTask(){
     refreshAll();
 }
 
-// ==========================
-// 🧰 CREATE JOB MODAL
-// ==========================
-function openJobModal(){
-    document.getElementById("jobModal").style.display = "block";
+
+function openCreateJobModal() {
+    document.getElementById("createJobModal").style.display = "block";
     loadUsersForJobDropdown();
 }
 
-function closeJobModal(){
-    document.getElementById("jobModal").style.display = "none";
+
+function closeCreateJobModal() {
+    document.getElementById("createJobModal").style.display = "none";
 }
 
-async function loadUsersForJobDropdown(){
+
+async function loadUsersForJobDropdown() {
     const res = await apiRequest("/users/");
     const users = res?.data || [];
-
     const select = document.getElementById("jobUser");
     select.innerHTML = "";
 
-    users.forEach(u => {
-        if(u.role !== "ADMIN"){
-            select.innerHTML += `<option value="${u.id}">${u.name}</option>`;
+    users.forEach(user => {
+        if (user.role !== "ADMIN") {
+            select.innerHTML += `<option value="${user.id}">${user.name}</option>`;
         }
     });
 }
 
-async function submitJob(){
+
+async function submitJob() {
     const title = jobService.value;
     const description = jobDescription.value;
     const owner_id = jobUser.value;
@@ -182,29 +184,23 @@ async function submitJob(){
     if (!result) return;
 
     alert(result.message || "Job created successfully");
-    closeJobModal();
+    closeCreateJobModal();
     refreshAll();
 }
 
-// ==========================
-// 📋 TASK TABLE
-// ==========================
+
 async function loadAllTasks() {
-
     const res = await apiRequest("/tasks/");
-    let tasks = res?.data || [];
-
-    // 🔥 SORT latest first
-    tasks.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
-
+    const tasks = res?.data || [];
     const tbody = document.querySelector("#adminTasksTable tbody");
-    if (!tbody) return;
-
     tbody.innerHTML = "";
 
+    tasks.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
     tasks.forEach(task => {
-        tbody.innerHTML += `
-        <tr>
+        const row = document.createElement("tr");
+        row.className = "clickable-row";
+        row.innerHTML = `
             <td>${task.id}</td>
             <td>${task.owner_name || "N/A"}</td>
             <td>${task.title}</td>
@@ -213,59 +209,170 @@ async function loadAllTasks() {
             <td>${task.github_link || "-"}</td>
             <td>${formatDate(task.created_at)}</td>
             <td>${formatDuration(task.time_taken)}</td>
-        </tr>`;
+        `;
+        row.addEventListener("click", () => viewAdminTask(task.id));
+        tbody.appendChild(row);
     });
 }
 
-// ==========================
-// 📋 JOB CARDS TABLE
-// ==========================
-async function loadAllJobs(){
 
+async function loadAllJobs() {
     const res = await apiRequest("/job-cards/");
-    let jobs = res?.data || [];
-
-    jobs.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
-
+    const jobs = res?.data || [];
     const tbody = document.querySelector("#jobsTable tbody");
-    if (!tbody) return;
-
     tbody.innerHTML = "";
 
+    jobs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
     jobs.forEach(job => {
-        tbody.innerHTML += `
-        <tr>
+        const row = document.createElement("tr");
+        row.className = "clickable-row";
+        row.innerHTML = `
             <td>${job.id}</td>
             <td>${job.title}</td>
             <td>${job.status}</td>
             <td>${formatDate(job.created_at)}</td>
             <td>${formatDuration(job.duration)}</td>
-        </tr>`;
+        `;
+        row.addEventListener("click", () => viewAdminJob(job.id));
+        tbody.appendChild(row);
     });
 }
 
-// ==========================
-// 🧠 HELPERS
-// ==========================
-function formatDate(date){
+
+async function viewAdminTask(taskId) {
+    const res = await apiRequest(`/tasks/${taskId}`);
+    const task = res?.data?.task;
+    const updates = res?.data?.updates || [];
+    if (!task) return;
+
+    currentAdminTaskId = task.id;
+
+    document.getElementById("adminTaskTitle").innerText = task.title;
+    document.getElementById("adminTaskDescription").innerText = task.description || "No description provided";
+    document.getElementById("adminTaskOwner").innerText = task.owner_name || "Unknown";
+    document.getElementById("adminTaskAssignedBy").innerText = task.assigned_by_name || "Unknown";
+    document.getElementById("adminTaskStatus").innerText = task.status;
+    document.getElementById("adminTaskGithub").innerText = task.github_link || "N/A";
+    document.getElementById("adminTaskGithub").href = task.github_link || "#";
+    document.getElementById("adminTaskCreated").innerText = formatDate(task.created_at);
+    document.getElementById("adminTaskDuration").innerText = formatDuration(task.time_taken);
+    document.getElementById("adminTaskStart").innerText = formatDate(task.start_time);
+    document.getElementById("adminTaskEnd").innerText = formatDate(task.end_time);
+
+    renderUpdates("adminTaskUpdates", updates);
+    document.getElementById("adminTaskModal").style.display = "block";
+}
+
+
+async function addAdminTaskReply() {
+    if (!currentAdminTaskId) return;
+
+    const textarea = document.getElementById("adminTaskReply");
+    const message = textarea.value.trim();
+    if (!message) {
+        alert("Write a comment first");
+        return;
+    }
+
+    await apiRequest(`/tasks/update/${currentAdminTaskId}`, "POST", { message });
+    textarea.value = "";
+    await loadAdminNotifications();
+    await viewAdminTask(currentAdminTaskId);
+}
+
+
+function closeAdminTaskModal() {
+    document.getElementById("adminTaskModal").style.display = "none";
+}
+
+
+async function viewAdminJob(jobId) {
+    const res = await apiRequest(`/job-cards/${jobId}`);
+    const job = res?.data?.job;
+    const updates = res?.data?.updates || [];
+    if (!job) return;
+
+    currentAdminJobId = job.id;
+
+    document.getElementById("adminJobTitle").innerText = job.title;
+    document.getElementById("adminJobDescription").innerText = job.description || "No description provided";
+    document.getElementById("adminJobOwner").innerText = job.owner_name || "Unknown";
+    document.getElementById("adminJobAssignedBy").innerText = job.assigned_by_name || "Unknown";
+    document.getElementById("adminJobStatus").innerText = job.status;
+    document.getElementById("adminJobGithub").innerText = job.github_link || "N/A";
+    document.getElementById("adminJobGithub").href = job.github_link || "#";
+    document.getElementById("adminJobCreated").innerText = formatDate(job.created_at);
+    document.getElementById("adminJobOpened").innerText = formatDate(job.opened_at);
+    document.getElementById("adminJobClosed").innerText = formatDate(job.closed_at);
+    document.getElementById("adminJobDuration").innerText = formatDuration(job.duration);
+
+    renderUpdates("adminJobUpdates", updates);
+    document.getElementById("adminJobModal").style.display = "block";
+}
+
+
+async function addAdminJobReply() {
+    if (!currentAdminJobId) return;
+
+    const textarea = document.getElementById("adminJobReply");
+    const message = textarea.value.trim();
+    if (!message) {
+        alert("Write an update first");
+        return;
+    }
+
+    await apiRequest(`/job-cards/update/${currentAdminJobId}`, "POST", { message });
+    textarea.value = "";
+    await loadAdminNotifications();
+    await viewAdminJob(currentAdminJobId);
+}
+
+
+function closeAdminJobModal() {
+    document.getElementById("adminJobModal").style.display = "none";
+}
+
+
+function renderUpdates(elementId, updates) {
+    const container = document.getElementById(elementId);
+    container.innerHTML = "";
+
+    if (!updates.length) {
+        container.innerHTML = `<div class="update-item">No updates yet.</div>`;
+        return;
+    }
+
+    updates.forEach(update => {
+        container.innerHTML += `
+            <div class="update-item">
+                <div><strong>${update.author_name || "Unknown"} · ${update.author_role || "USER"}</strong></div>
+                <div>${update.message}</div>
+                <small>${formatDate(update.created_at)}</small>
+            </div>
+        `;
+    });
+}
+
+
+function formatDate(date) {
     return date ? new Date(date).toLocaleString() : "N/A";
 }
 
-function formatDuration(seconds){
-    if(!seconds) return "0 min";
-    const mins = Math.floor(seconds/60);
-    const hrs = Math.floor(mins/60);
-    return hrs>0 ? `${hrs}h ${mins%60}m` : `${mins} min`;
+
+function formatDuration(seconds) {
+    if (!seconds) return "0 min";
+    const mins = Math.floor(seconds / 60);
+    const hrs = Math.floor(mins / 60);
+    return hrs > 0 ? `${hrs}h ${mins % 60}m` : `${mins} min`;
 }
 
-function initCharts() {
 
+function initCharts() {
     const barCanvas = document.getElementById("barChart");
     const pieCanvas = document.getElementById("pieChart");
-
     if (!barCanvas || !pieCanvas) return;
 
-    // 🔥 BAR CHART (MODERN)
     barChart = new Chart(barCanvas, {
         type: "bar",
         data: {
@@ -273,57 +380,38 @@ function initCharts() {
             datasets: [{
                 label: "Tasks",
                 data: [0, 0, 0],
-                backgroundColor: [
-                    "#22c55e",  // green
-                    "#f59e0b",  // orange
-                    "#ef4444"   // red
-                ],
+                backgroundColor: ["#22c55e", "#f59e0b", "#ef4444"],
                 borderRadius: 8
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
         }
     });
 
-    // 🔥 DOUGHNUT CHART (REPLACES PIE)
     pieChart = new Chart(pieCanvas, {
         type: "doughnut",
         data: {
             labels: ["Completed", "In Progress", "Pending"],
             datasets: [{
                 data: [0, 0, 0],
-                backgroundColor: [
-                    "#22c55e",
-                    "#f59e0b",
-                    "#ef4444"
-                ]
+                backgroundColor: ["#22c55e", "#f59e0b", "#ef4444"]
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            cutout: "65%", // 🔥 makes it modern doughnut
-            plugins: {
-                legend: {
-                    position: "bottom"
-                }
-            }
+            cutout: "65%",
+            plugins: { legend: { position: "bottom" } }
         }
     });
 }
 
-function updateCharts(chartPayload, completed, progress, pending) {
 
+function updateCharts(chartPayload, completed, progress, pending) {
     if (!barChart || !pieChart) return;
 
     const pieLabels = chartPayload?.pie?.labels || ["Completed", "In Progress", "Pending"];
@@ -340,44 +428,33 @@ function updateCharts(chartPayload, completed, progress, pending) {
     pieChart.update();
 }
 
-function scrollToSection(sectionId){
+
+function scrollToSection(sectionId) {
     const section = document.getElementById(sectionId);
-    if(section){
-        section.scrollIntoView({
-            behavior: "smooth"
-        });
+    if (section) {
+        section.scrollIntoView({ behavior: "smooth" });
     }
 }
 
-// ==========================
-// 🔄 REFRESH
-// ==========================
-function refreshAll(){
+
+function refreshAll() {
     loadAdminKPIs();
     loadAllTasks();
     loadAllJobs();
+    loadAdminNotifications();
 }
 
-// ==========================
-// 🚪 LOGOUT
-// ==========================
-function logout(){
+
+function logout() {
     localStorage.clear();
     window.location.href = "login.html";
 }
 
-// ==========================
-// 🚀 START
-// ==========================
-document.addEventListener("DOMContentLoaded", ()=>{
 
-    initCharts(); // 🔥 MUST COME FIRST
-
+document.addEventListener("DOMContentLoaded", () => {
+    initCharts();
     getCurrentUser();
-    loadAdminKPIs();
-    loadAdminNotifications();
-    loadAllTasks();
-    loadAllJobs();
+    refreshAll();
 });
 
-setInterval(loadAdminNotifications, 5000);
+setInterval(loadAdminNotifications, 10000);

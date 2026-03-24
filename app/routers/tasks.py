@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+
 from app.database import get_db
 from app import models
 from app.auth import get_current_user
@@ -10,29 +11,45 @@ router = APIRouter(
     tags=["Tasks"]
 )
 
-def serialize_task(t):
+
+def serialize_task(task):
     return {
-        "id": t.id,
-        "title": t.title,
-        "description": t.description,
-        "status": t.status,
-
-        "created_at": t.created_at.isoformat() if t.created_at else None,
-
-        "start_time": t.start_time.isoformat() if t.start_time else None,
-        "end_time": t.end_time.isoformat() if t.end_time else None,
-
-        # 🔥 handle safely
-        "time_taken": float(t.time_taken) if t.time_taken else 0,
-        "hours_spent": float(t.hours_spent) if t.hours_spent else 0,
-
-        "completed_at": t.completed_at.isoformat() if t.completed_at else None,
-
-        "github_link": t.github_link
+        "id": task.id,
+        "title": task.title,
+        "description": task.description,
+        "status": task.status,
+        "created_at": task.created_at.isoformat() if task.created_at else None,
+        "start_time": task.start_time.isoformat() if task.start_time else None,
+        "end_time": task.end_time.isoformat() if task.end_time else None,
+        "time_taken": float(task.time_taken) if task.time_taken else 0,
+        "hours_spent": float(task.hours_spent) if task.hours_spent else 0,
+        "completed_at": task.completed_at.isoformat() if task.completed_at else None,
+        "github_link": task.github_link,
+        "owner_id": task.owner_id,
+        "assigned_by_id": task.assigned_by_id,
     }
-# ==========================
-# GET MY TASKS (USER)
-# ==========================
+
+
+def serialize_task_update(update):
+    return {
+        "id": update.id,
+        "message": update.message,
+        "created_at": update.created_at.isoformat() if update.created_at else None,
+        "author_name": update.author.name if getattr(update, "author", None) else "Unknown",
+        "author_role": update.author.role if getattr(update, "author", None) else "USER",
+    }
+
+
+def create_notification(db: Session, user_id: int, sender_id: int | None, message: str):
+    db.add(models.Notification(
+        message=message,
+        user_id=user_id,
+        sender_id=sender_id,
+        is_read=False,
+        created_at=now_harare()
+    ))
+
+
 @router.get("/my-tasks")
 def get_my_tasks(
     db: Session = Depends(get_db),
@@ -43,41 +60,29 @@ def get_my_tasks(
         .order_by(models.Task.id.desc())\
         .all()
 
-    return {"success": True, "data": [serialize_task(t) for t in tasks]}
+    return {"success": True, "data": [serialize_task(task) for task in tasks]}
 
 
-# ==========================
-# GET ALL TASKS (ADMIN)
-# ==========================
-from app.models import Task, User
-
-# ==========================
-# ADMIN: GET ALL TASKS
-# ==========================
 @router.get("/")
 def get_all_tasks(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user)
 ):
     if current_user.role != "ADMIN":
         raise HTTPException(status_code=403, detail="Not authorized")
 
-    tasks = db.query(Task).order_by(Task.id.desc()).all()
-
+    tasks = db.query(models.Task).order_by(models.Task.id.desc()).all()
     result = []
 
     for task in tasks:
-        owner = db.query(User).filter(User.id == task.owner_id).first()
-
+        owner = db.query(models.User).filter(models.User.id == task.owner_id).first()
         result.append({
             "id": task.id,
             "title": task.title,
             "description": task.description,
             "status": task.status,
             "github_link": task.github_link,
-
             "owner_name": owner.name if owner else "Unknown",
-
             "created_at": task.created_at,
             "time_taken": task.time_taken
         })
@@ -87,9 +92,7 @@ def get_all_tasks(
         "data": result
     }
 
-# ==========================
-# START TASK
-# ==========================
+
 @router.put("/start/{task_id}")
 def start_task(
     task_id: int,
@@ -115,9 +118,6 @@ def start_task(
     return {"success": True, "message": "Task started"}
 
 
-# ==========================
-# COMPLETE TASK
-# ==========================
 @router.put("/complete/{task_id}")
 def complete_task(
     task_id: int,
@@ -141,39 +141,30 @@ def complete_task(
     task.status = "Completed"
     task.end_time = now_harare()
 
-    # 🔥 SAFE TIME CALC
-    start = task.start_time
-    end = task.end_time
-
-    start = ensure_harare(start)
-    end = ensure_harare(end)
+    start = ensure_harare(task.start_time)
+    end = ensure_harare(task.end_time)
 
     task.time_taken = (end - start).total_seconds()
     task.hours_spent = round(task.time_taken / 3600, 2)
-    task.completed_at = end
+    task.completed_at = task.end_time
 
-    # 🔔 NOTIFY ADMINS
     admins = db.query(models.User)\
         .filter(models.User.role == "ADMIN")\
         .all()
 
     for admin in admins:
-        db.add(models.Notification(
-            message=f"{current_user.name} completed task: {task.title}",
-            user_id=admin.id,
-            sender_id=current_user.id,
-            is_read=False,
-            created_at=now_harare()
-        ))
+        create_notification(
+            db,
+            admin.id,
+            current_user.id,
+            f"{current_user.name} completed task: {task.title}"
+        )
 
     db.commit()
 
     return {"success": True, "message": "Task completed"}
 
 
-# ==========================
-# ASSIGN TASK (ADMIN)
-# ==========================
 @router.post("/assign-task")
 def assign_task(
     data: dict,
@@ -200,24 +191,56 @@ def assign_task(
     )
 
     db.add(task)
-
-    # 🔔 notify user
-    db.add(models.Notification(
-        message=f"New task assigned: {title}",
-        user_id=owner_id,
-        sender_id=current_user.id,
-        is_read=False,
-        created_at=now_harare()
-    ))
-
+    create_notification(db, owner_id, current_user.id, f"New task assigned: {title}")
     db.commit()
 
     return {"success": True, "message": "Task assigned successfully"}
 
 
-# ==========================
-# GET NOTIFICATIONS
-# ==========================
+@router.post("/update/{task_id}")
+def add_task_update(
+    task_id: int,
+    data: dict,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    task = db.query(models.Task).filter(models.Task.id == task_id).first()
+
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    if current_user.role != "ADMIN" and task.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not allowed")
+
+    message = (data.get("message") or "").strip()
+    if not message:
+        raise HTTPException(status_code=400, detail="Message required")
+
+    update = models.TaskUpdate(
+        task_id=task_id,
+        author_id=current_user.id,
+        message=message,
+        created_at=now_harare()
+    )
+    db.add(update)
+
+    if current_user.role == "ADMIN":
+        create_notification(db, task.owner_id, current_user.id, f"Admin commented on task: {task.title}")
+    else:
+        admins = db.query(models.User).filter(models.User.role == "ADMIN").all()
+        for admin in admins:
+            create_notification(db, admin.id, current_user.id, f"{current_user.name} updated task: {task.title}")
+
+    db.commit()
+    db.refresh(update)
+
+    return {
+        "success": True,
+        "message": "Task update added",
+        "data": serialize_task_update(update)
+    }
+
+
 @router.get("/notifications")
 def get_notifications(
     db: Session = Depends(get_db),
@@ -228,23 +251,25 @@ def get_notifications(
         .order_by(models.Notification.created_at.desc())\
         .all()
 
+    unread_count = sum(1 for notification in notifications if not notification.is_read)
+
     return {
         "success": True,
         "data": [
             {
-                "id": n.id,
-                "message": n.message,
-                "is_read": n.is_read,
-                "created_at": n.created_at.isoformat() if n.created_at else None
+                "id": notification.id,
+                "message": notification.message,
+                "is_read": notification.is_read,
+                "created_at": notification.created_at.isoformat() if notification.created_at else None
             }
-            for n in notifications
-        ]
+            for notification in notifications
+        ],
+        "meta": {
+            "unread_count": unread_count
+        }
     }
 
 
-# ==========================
-# MARK AS READ
-# ==========================
 @router.put("/notifications/read")
 def mark_notifications_read(
     db: Session = Depends(get_db),
@@ -261,9 +286,7 @@ def mark_notifications_read(
 
     return {"success": True, "message": "Marked as read"}
 
-# ==========================
-# 📊 USER DASHBOARD SUMMARY
-# ==========================
+
 @router.get("/my-dashboard")
 def get_my_dashboard(
     db: Session = Depends(get_db),
@@ -274,11 +297,10 @@ def get_my_dashboard(
         .all()
 
     assigned = len(tasks)
+    completed = len([task for task in tasks if task.status == "Completed"])
+    in_progress = len([task for task in tasks if task.status == "In Progress"])
 
-    completed = len([t for t in tasks if t.status == "Completed"])
-    in_progress = len([t for t in tasks if t.status == "In Progress"])
-
-    total_seconds = sum([t.time_taken or 0 for t in tasks])
+    total_seconds = sum([task.time_taken or 0 for task in tasks])
     total_hours = round(total_seconds / 3600, 2)
 
     return {
@@ -291,5 +313,37 @@ def get_my_dashboard(
             "hours": total_hours
         }
     }
-    
-    
+
+
+@router.get("/{task_id}")
+def get_task_with_updates(
+    task_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    task = db.query(models.Task).filter(models.Task.id == task_id).first()
+
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    if current_user.role != "ADMIN" and task.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not allowed")
+
+    owner = db.query(models.User).filter(models.User.id == task.owner_id).first()
+    assigned_by = db.query(models.User).filter(models.User.id == task.assigned_by_id).first()
+    updates = db.query(models.TaskUpdate)\
+        .filter(models.TaskUpdate.task_id == task_id)\
+        .order_by(models.TaskUpdate.created_at.asc())\
+        .all()
+
+    return {
+        "success": True,
+        "data": {
+            "task": {
+                **serialize_task(task),
+                "owner_name": owner.name if owner else "Unknown",
+                "assigned_by_name": assigned_by.name if assigned_by else "Unknown",
+            },
+            "updates": [serialize_task_update(update) for update in updates]
+        }
+    }

@@ -4,237 +4,382 @@
     <title>Dashboard</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
     <style>
-        body{
-            margin:0;
-            font-family:'Segoe UI',sans-serif;
-            background:#f5f6fa;
+        body {
+            margin: 0;
+            font-family: "Segoe UI", sans-serif;
+            background: #f5f6fa;
         }
 
-        .layout{
-            display:flex;
+        .layout {
+            display: flex;
+            min-height: 100vh;
         }
 
-        /* SIDEBAR */
-        .sidebar{
-            width:220px;
-            background:#0d1b2a;
-            color:white;
-            height:100vh;
-            padding:20px;
+        .sidebar {
+            width: 220px;
+            background: #0d1b2a;
+            color: white;
+            padding: 20px;
         }
 
-        .sidebar h2{
-            margin-bottom:30px;
+        .sidebar h2 {
+            margin-bottom: 30px;
         }
 
-        .sidebar ul{
-            list-style:none;
-            padding:0;
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
         }
 
-        .sidebar li{
-            margin:15px 0;
-            cursor:pointer;
+        .sidebar li {
+            margin: 15px 0;
+            cursor: pointer;
         }
 
-        /* MAIN */
-        .main{
-            flex:1;
-            padding:20px;
+        .main {
+            flex: 1;
+            padding: 24px;
         }
 
-        /* KPI */
-        .kpi{
-            display:grid;
-            grid-template-columns:repeat(4,1fr);
-            gap:20px;
+        .top-strip {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 20px;
         }
 
-        .card{
-            background:white;
-            padding:20px;
-            border-radius:12px;
+        .notification-bar {
+            flex: 1;
+            background: white;
+            border-radius: 16px;
+            padding: 14px 18px;
+            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
         }
 
-        .card .number{
-            font-size:28px;
-            font-weight:bold;
+        .notification-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
         }
 
-        /* CHARTS */
-        .charts{
-            display:grid;
-            grid-template-columns:2fr 1fr;
-            gap:20px;
-            margin-top:30px;
+        .notification-count {
+            min-width: 32px;
+            height: 32px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #0d1b2a;
+            color: white;
+            font-weight: 700;
         }
 
-        .chart-box{
-            background:white;
-            padding:20px;
-            border-radius:12px;
+        .notification-list {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
         }
 
-        /* TABLE */
-        .table-box{
-            background:white;
-            padding:20px;
-            border-radius:12px;
-            margin-top:30px;
+        .notification-item {
+            min-width: 260px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px 14px;
         }
 
-        table{
-            width:100%;
-            border-collapse:collapse;
+        .notification-item small {
+            display: block;
+            margin-top: 6px;
+            color: #64748b;
         }
 
-        th, td{
-            padding:12px;
-            text-align:left;
+        .header-actions button {
+            padding: 10px 14px;
+            border: none;
+            border-radius: 10px;
+            background: #2563eb;
+            color: white;
+            cursor: pointer;
         }
 
-        th{
-            border-bottom:1px solid #ddd;
+        .kpi {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
         }
 
-        /* STATUS BADGES */
-        .badge{
-            padding:5px 10px;
-            border-radius:6px;
-            color:white;
-            font-size:12px;
+        .card,
+        .chart-box,
+        .table-box,
+        .performance {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
         }
 
-        .pending{ background:gray; }
-        .progress{ background:orange; }
-        .completed{ background:green; }
-
-        /* BUTTONS */
-        .btn{
-            padding:6px 10px;
-            border:none;
-            border-radius:6px;
-            cursor:pointer;
-            color:white;
+        .card {
+            padding: 20px;
         }
 
-        .btn-start{ background:orange; }
-        .btn-view{ background:green; }
-        .btn-update{ background:blue; }
-
-        /* PERFORMANCE */
-        .performance{
-            background:white;
-            padding:20px;
-            border-radius:12px;
-            margin-top:30px;
+        .card .number {
+            font-size: 28px;
+            font-weight: 700;
         }
 
-        .performance canvas{
-            width:100%;
-            max-height:320px;
+        .charts {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            margin-top: 24px;
+        }
+
+        .chart-box,
+        .performance,
+        .table-box {
+            padding: 20px;
+        }
+
+        .table-box {
+            margin-top: 24px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        tr.clickable-row {
+            cursor: pointer;
+        }
+
+        tr.clickable-row:hover {
+            background: #f8fafc;
+        }
+
+        .badge {
+            padding: 5px 10px;
+            border-radius: 999px;
+            color: white;
+            font-size: 12px;
+        }
+
+        .pending { background: #64748b; }
+        .progress { background: #f59e0b; }
+        .completed { background: #16a34a; }
+
+        .btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            color: white;
+        }
+
+        .btn-start { background: #f59e0b; }
+        .btn-update { background: #2563eb; }
+        .btn-view { background: #16a34a; }
+
+        .performance {
+            margin-top: 24px;
         }
 
         .modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.6);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            z-index: 1000;
+            padding: 24px;
+            overflow-y: auto;
+        }
 
-#modalActions {
-    margin-top: 20px;
-    align-self: flex-end;
-}
+        .modal-content {
+            width: min(760px, 100%);
+            margin: 30px auto;
+            background: white;
+            border-radius: 22px;
+            padding: 28px;
+            box-shadow: 0 20px 60px rgba(15, 23, 42, 0.24);
+        }
 
-.modal-content {
-    position: relative;
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    width: 400px;
-    display: flex;
-    flex-direction: column;
-}
+        .modal-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+        }
 
-.close {
-    position: absolute;
-    top: 10px;
-    right: 15px;
-    font-size: 26px;
-    font-weight: bold;
-    cursor: pointer;
-    color: black;
-    z-index: 10;
-}
+        .close {
+            font-size: 34px;
+            font-weight: 700;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .modal-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .modal-card {
+            background: #f8fafc;
+            border-radius: 14px;
+            padding: 14px;
+        }
+
+        .modal-card strong {
+            display: block;
+            margin-bottom: 4px;
+            color: #0f172a;
+        }
+
+        .update-panel {
+            margin-top: 18px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 18px;
+        }
+
+        .update-panel textarea {
+            width: 100%;
+            min-height: 110px;
+            border-radius: 12px;
+            border: 1px solid #cbd5e1;
+            padding: 12px;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+
+        .update-actions {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .updates-list {
+            display: grid;
+            gap: 12px;
+            margin-top: 16px;
+            max-height: 240px;
+            overflow-y: auto;
+        }
+
+        .update-item {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 12px 14px;
+        }
+
+        .update-item strong {
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .update-item small {
+            color: #64748b;
+        }
+
+        @media (max-width: 900px) {
+            .sidebar {
+                display: none;
+            }
+
+            .kpi {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .charts {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 
 <body class="dashboard-page">
-
 <div class="layout">
-
-    <!-- SIDEBAR -->
     <div class="sidebar">
-    <h2>BlitzTech</h2>
-    <ul>
-        <li onclick="scrollToSection('dashboard')">My Dashboard</li>
-        <li onclick="scrollToSection('tasks')">My Tasks</li>
-        <li onclick="scrollToSection('jobs')">My Job Cards</li>
-        <li onclick="scrollToSection('performance')">Performance</li>
-    </ul>
-</div>
+        <h2>BlitzTech</h2>
+        <ul>
+            <li onclick="scrollToSection('dashboard')">My Dashboard</li>
+            <li onclick="scrollToSection('tasks')">My Tasks</li>
+            <li onclick="scrollToSection('jobs')">My Job Cards</li>
+            <li onclick="scrollToSection('performance')">Performance</li>
+        </ul>
+    </div>
 
-    <!-- MAIN -->
     <div class="main">
+        <div class="top-strip">
+            <div class="notification-bar">
+                <div class="notification-head">
+                    <div>
+                        <h3 style="margin:0;">Notifications</h3>
+                        <small>Task assignments, job cards, and admin updates</small>
+                    </div>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <span class="notification-count" id="notificationCount">0</span>
+                        <button onclick="markNotificationsRead()">Mark all read</button>
+                    </div>
+                </div>
+                <div class="notification-list" id="notificationsPanel"></div>
+            </div>
+
+            <div class="header-actions">
+                <button onclick="logout()">Logout</button>
+            </div>
+        </div>
 
         <h1 id="dashboardTitle">Dashboard</h1>
 
-        <!-- KPI -->
-        <div class="kpi">
+        <div class="kpi" id="dashboard">
             <div class="card">
                 <h3>Assigned Tasks</h3>
                 <p class="number" id="assignedTasks">0</p>
             </div>
-
             <div class="card">
                 <h3>Completed</h3>
                 <p class="number" id="completedTasks">0</p>
             </div>
-
             <div class="card">
                 <h3>In Progress</h3>
                 <p class="number" id="inProgressTasks">0</p>
             </div>
-
             <div class="card">
                 <h3>Hours Worked</h3>
                 <p class="number" id="hoursWorked">0h</p>
             </div>
         </div>
 
-        <!-- CHARTS -->
         <div class="charts">
             <div class="chart-box">
                 <h3>Weekly Productivity</h3>
                 <canvas id="barChart"></canvas>
             </div>
-
             <div class="chart-box">
                 <h3>Task Status Breakdown</h3>
                 <canvas id="pieChart"></canvas>
             </div>
         </div>
 
-        <!-- TASKS -->
-        <div class="table-box">
+        <div class="table-box" id="tasks">
             <h3>My Tasks</h3>
             <table>
                 <thead>
@@ -248,8 +393,7 @@
             </table>
         </div>
 
-        <!-- JOBS -->
-        <div class="table-box">
+        <div class="table-box" id="jobs">
             <h3>My Job Cards</h3>
             <table>
                 <thead>
@@ -264,65 +408,84 @@
             </table>
         </div>
 
-        <!-- PERFORMANCE -->
-        <div class="performance">
+        <div class="performance" id="performance">
             <h3>Daily Performance Analytics</h3>
             <canvas id="performanceChart"></canvas>
         </div>
-
     </div>
-
 </div>
 
-<!-- 🔥 TASK VIEW MODAL -->
-<div id="taskModal" class="modal" style="display:none;">
+<div id="taskModal" class="modal">
     <div class="modal-content">
+        <div class="modal-top">
+            <div>
+                <h3 style="margin:0;">My Task</h3>
+                <small>Track progress and leave updates for the admin</small>
+            </div>
+            <span class="close" onclick="closeModal()">&times;</span>
+        </div>
 
-        <span class="close" onclick="closeModal()">&times;</span>
+        <h2 id="modalTitle"></h2>
+        <p id="modalDescription"></p>
 
-        <h3>My Task</h3>
-        <h2><strong>Title:</strong> <span id="modalTitle"></span></h2>
-        <p><strong>Description:</strong> <span id="modalDescription"></span></p>
-        <p><strong>Status:</strong> <span id="modalStatus"></span></p>
-        <p><strong>GitHub:</strong> <a id="modalGithub" target="_blank"></a></p>
-        <p><strong>Start Time:</strong> <span id="modalStart"></span></p>
-        <p><strong>End Time:</strong> <span id="modalEnd"></span></p>
-        <p><strong>Time Taken:</strong> <span id="modalTime"></span></p>
+        <div class="modal-grid">
+            <div class="modal-card"><strong>Status</strong><span id="modalStatus"></span></div>
+            <div class="modal-card"><strong>GitHub</strong><a id="modalGithub" target="_blank">N/A</a></div>
+            <div class="modal-card"><strong>Start Time</strong><span id="modalStart"></span></div>
+            <div class="modal-card"><strong>End Time</strong><span id="modalEnd"></span></div>
+            <div class="modal-card"><strong>Time Taken</strong><span id="modalTime"></span></div>
+            <div class="modal-card"><strong>Assigned By</strong><span id="modalAssignedBy"></span></div>
+        </div>
 
-        <!-- ✅ MOVE HERE -->
-        <div id="modalActions"></div>
+        <div id="modalActions" class="update-actions"></div>
 
+        <div class="update-panel">
+            <h4>Task Comments & Updates</h4>
+            <textarea id="taskUpdateInput" placeholder="Write a task update or comment for the admin..."></textarea>
+            <div class="update-actions">
+                <button class="btn btn-update" onclick="addTaskUpdate()">Add Comment</button>
+            </div>
+            <div class="updates-list" id="taskUpdatesList"></div>
+        </div>
     </div>
 </div>
 
-<!-- 🔥 JOB MODAL -->
-<div id="jobModal" class="modal" style="display:none;">
+<div id="jobModal" class="modal">
     <div class="modal-content">
+        <div class="modal-top">
+            <div>
+                <h3 style="margin:0;">My Job</h3>
+                <small>Leave updates here so the admin can track progress</small>
+            </div>
+            <span class="close" onclick="closeJobModal()">&times;</span>
+        </div>
 
-        <span class="close" onclick="closeJobModal()">&times;</span>
+        <h2 id="jobTitle"></h2>
+        <p id="jobDescription"></p>
 
-        <h3>My Job</h3>
-        <h2><strong>Title:</strong> <span id="jobTitle"></span></h2>
+        <div class="modal-grid">
+            <div class="modal-card"><strong>Status</strong><span id="jobStatus"></span></div>
+            <div class="modal-card"><strong>GitHub</strong><a id="jobGithub" target="_blank">N/A</a></div>
+            <div class="modal-card"><strong>Created At</strong><span id="jobCreated"></span></div>
+            <div class="modal-card"><strong>Opened At</strong><span id="jobOpened"></span></div>
+            <div class="modal-card"><strong>Closed At</strong><span id="jobClosed"></span></div>
+            <div class="modal-card"><strong>Assigned By</strong><span id="jobAssignedBy"></span></div>
+        </div>
 
-        <p><strong>Description:</strong> <span id="jobDescription"></span></p>
-        <p><strong>Status:</strong> <span id="jobStatus"></span></p>
-        <p><strong>GitHub:</strong> <a id="jobGithub" target="_blank"></a></p>
+        <div id="jobActions" class="update-actions"></div>
 
-        <p><strong>Created At:</strong> <span id="jobCreated"></span></p>
-        <p><strong>Opened At:</strong> <span id="jobOpened"></span></p>
-        <p><strong>Closed At:</strong> <span id="jobClosed"></span></p>
-
-        <div id="jobUpdateSection" style="margin-top:15px;">
-    <textarea id="jobUpdateInput" placeholder="Write update..." style="width:100%; padding:10px;"></textarea>
-    <button class="btn btn-update" onclick="addJobUpdate()">Add Update</button>
-    </div>
-
-        <div id="jobActions"></div>
-
+        <div class="update-panel">
+            <h4>Job Updates</h4>
+            <textarea id="jobUpdateInput" placeholder="Write update..."></textarea>
+            <div class="update-actions">
+                <button class="btn btn-update" onclick="addJobUpdate()">Add Update</button>
+            </div>
+            <div class="updates-list" id="jobUpdatesList"></div>
+        </div>
     </div>
 </div>
+
 <script src="api.js"></script>
 <script src="dashboard.js"></script>
-
 </body>
 </html>

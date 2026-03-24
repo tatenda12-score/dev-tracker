@@ -58,6 +58,25 @@ class Task(Base):
     # 🔗 Relationships
     owner = relationship("User", foreign_keys=[owner_id], back_populates="tasks")
     assigned_by = relationship("User", foreign_keys=[assigned_by_id])
+    updates = relationship("TaskUpdate", back_populates="task", cascade="all, delete-orphan")
+
+
+# ==========================
+# TASK UPDATE MODEL
+# ==========================
+class TaskUpdate(Base):
+    __tablename__ = "task_updates"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    task_id = Column(Integer, ForeignKey("tasks.id"), nullable=False)
+    author_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    message = Column(Text, nullable=False)
+
+    created_at = Column(DateTime, default=now_harare)
+
+    task = relationship("Task", back_populates="updates")
+    author = relationship("User")
 
 
 # ==========================
