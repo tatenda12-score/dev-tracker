@@ -86,8 +86,8 @@ async function loadAdminNotifications() {
 
     notifications.slice(0, 8).forEach(notification => {
         panel.innerHTML += `
-            <div class="notification-item">
-                <div>${notification.message}</div>
+            <div class="notification-item ${notification.is_read ? "" : "unread"}">
+                <div class="notification-message">${notification.message}</div>
                 <small>${formatDate(notification.created_at)}</small>
             </div>
         `;

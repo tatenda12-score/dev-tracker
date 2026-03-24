@@ -82,23 +82,39 @@ body {
 }
 
 .notification-list {
-    display: flex;
-    gap: 10px;
-    overflow-x: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 12px;
 }
 
 .notification-item {
-    min-width: 260px;
     background: #f8fafc;
     border: 1px solid #e2e8f0;
     border-radius: 12px;
     padding: 12px 14px;
+    min-width: 0;
+}
+
+.notification-item.unread {
+    background: #fff1f2;
+    border-color: #fca5a5;
+    box-shadow: inset 0 0 0 1px rgba(220, 38, 38, 0.08);
+}
+
+.notification-item.unread .notification-message {
+    color: #991b1b;
+    font-weight: 600;
 }
 
 .notification-item small {
     display: block;
     margin-top: 6px;
     color: #64748b;
+}
+
+.notification-message {
+    line-height: 1.4;
+    word-break: break-word;
 }
 
 .quick-actions {
@@ -258,6 +274,27 @@ body {
     grid-template-columns: 1fr 1fr;
     gap: 14px;
     margin: 18px 0;
+}
+
+.detail-summary {
+    display: grid;
+    gap: 14px;
+    margin: 18px 0 22px;
+}
+
+.summary-block {
+    background: #f8fafc;
+    border-radius: 14px;
+    padding: 16px 18px;
+}
+
+.summary-block strong {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #475569;
 }
 
 .detail-card {
@@ -499,8 +536,16 @@ body {
             <span onclick="closeAdminTaskModal()" class="close-btn">&times;</span>
         </div>
 
-        <h2 id="adminTaskTitle"></h2>
-        <p id="adminTaskDescription"></p>
+        <div class="detail-summary">
+            <div class="summary-block">
+                <strong>Task Title</strong>
+                <div id="adminTaskTitle"></div>
+            </div>
+            <div class="summary-block">
+                <strong>Description</strong>
+                <div id="adminTaskDescription"></div>
+            </div>
+        </div>
 
         <div class="detail-grid">
             <div class="detail-card"><strong>User</strong><span id="adminTaskOwner"></span></div>
@@ -533,8 +578,16 @@ body {
             <span onclick="closeAdminJobModal()" class="close-btn">&times;</span>
         </div>
 
-        <h2 id="adminJobTitle"></h2>
-        <p id="adminJobDescription"></p>
+        <div class="detail-summary">
+            <div class="summary-block">
+                <strong>Job Title</strong>
+                <div id="adminJobTitle"></div>
+            </div>
+            <div class="summary-block">
+                <strong>Description</strong>
+                <div id="adminJobDescription"></div>
+            </div>
+        </div>
 
         <div class="detail-grid">
             <div class="detail-card"><strong>User</strong><span id="adminJobOwner"></span></div>
