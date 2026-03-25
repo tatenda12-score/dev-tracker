@@ -79,6 +79,10 @@ async function loadAdminKPIs() {
         tasks.filter(task => task.status === "In Progress").length;
     document.getElementById("jobBadgeCount").innerText =
         jobs.filter(job => job.status === "Open").length;
+    document.getElementById("taskPendingBadgeCount").innerText =
+        tasks.filter(task => task.status === "Pending").length;
+    document.getElementById("jobPendingBadgeCount").innerText =
+        jobs.filter(job => job.status === "Pending").length;
 
     updateCharts(chartsRes, completed, progress, pending);
 }
@@ -545,25 +549,25 @@ function scrollToSection(sectionId) {
     const section = document.getElementById(sectionId);
     if (section) {
         section.scrollIntoView({ behavior: "smooth" });
-        if (sectionId === "tasks") highlightStatusRows("#adminTasksTable", ["In Progress"]);
-        if (sectionId === "jobs") highlightStatusRows("#jobsTable", ["Open"]);
+        if (sectionId === "tasks") highlightStatusRows("#adminTasksTable", ["In Progress"], "focus-row");
+        if (sectionId === "jobs") highlightStatusRows("#jobsTable", ["Open"], "focus-row");
     }
 }
 
 
-function highlightStatusRows(tableSelector, statuses) {
+function highlightStatusRows(tableSelector, statuses, highlightClass = "focus-row") {
     const rows = Array.from(document.querySelectorAll(`${tableSelector} tbody tr`));
-    rows.forEach(row => row.classList.remove("focus-row"));
+    rows.forEach(row => row.classList.remove("focus-row", "warning-row", "danger-row"));
 
     const matches = rows.filter(row => statuses.includes(row.dataset.status));
-    matches.forEach(row => row.classList.add("focus-row"));
+    matches.forEach(row => row.classList.add(highlightClass));
 
     const first = matches[0];
     if (first) {
         first.scrollIntoView({ behavior: "smooth", block: "center" });
     }
 
-    setTimeout(() => matches.forEach(row => row.classList.remove("focus-row")), 4000);
+    setTimeout(() => matches.forEach(row => row.classList.remove(highlightClass)), 4000);
 }
 
 
