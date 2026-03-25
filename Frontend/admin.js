@@ -3,6 +3,7 @@ const token = localStorage.getItem("token");
 
 let barChart = null;
 let pieChart = null;
+let companyLineChart = null;
 let currentAdminTaskId = null;
 let currentAdminJobId = null;
 
@@ -58,13 +59,26 @@ async function loadAdminKPIs() {
 
     document.getElementById("totalJobs").innerText = jobs.length;
 
-    const completed = pieData[0] ?? tasks.filter(task => task.status === "Completed").length;
-    const progress = pieData[1] ?? tasks.filter(task => task.status === "In Progress").length;
-    const pending = pieData[2] ?? tasks.filter(task => task.status === "Pending").length;
+    const completed = pieData[0] ?? (
+        tasks.filter(task => task.status === "Completed").length +
+        jobs.filter(job => job.status === "Closed").length
+    );
+    const progress = pieData[1] ?? (
+        tasks.filter(task => task.status === "In Progress").length +
+        jobs.filter(job => job.status === "Open").length
+    );
+    const pending = pieData[2] ?? (
+        tasks.filter(task => task.status === "Pending").length +
+        jobs.filter(job => job.status === "Pending").length
+    );
 
     document.getElementById("activeTasks").innerText = progress;
     document.getElementById("completedTasks").innerText = completed;
     document.getElementById("overdueTasks").innerText = pending;
+    document.getElementById("taskBadgeCount").innerText =
+        tasks.filter(task => task.status === "In Progress").length;
+    document.getElementById("jobBadgeCount").innerText =
+        jobs.filter(job => job.status === "Open").length;
 
     updateCharts(chartsRes, completed, progress, pending);
 }
@@ -176,6 +190,13 @@ function closeCreateJobModal() {
 }
 
 
+function getAdminRowClass(status) {
+    if (status === "In Progress" || status === "Open") return "status-active";
+    if (status === "Completed" || status === "Closed") return "status-completed";
+    return "";
+}
+
+
 async function loadUsersForJobDropdown() {
     const res = await apiRequest("/users/");
     const users = res?.data || [];
@@ -219,9 +240,10 @@ async function loadAllTasks() {
 
     tasks.forEach(task => {
         const row = document.createElement("tr");
-        row.className = "clickable-row";
+        row.className = `clickable-row ${getAdminRowClass(task.status)}`.trim();
         row.id = `admin-task-row-${task.id}`;
         row.dataset.title = (task.title || "").trim().toLowerCase();
+        row.dataset.status = task.status;
         row.innerHTML = `
             <td>${task.id}</td>
             <td>${task.owner_name || "N/A"}</td>
@@ -248,9 +270,10 @@ async function loadAllJobs() {
 
     jobs.forEach(job => {
         const row = document.createElement("tr");
-        row.className = "clickable-row";
+        row.className = `clickable-row ${getAdminRowClass(job.status)}`.trim();
         row.id = `admin-job-row-${job.id}`;
         row.dataset.title = (job.title || "").trim().toLowerCase();
+        row.dataset.status = job.status;
         row.innerHTML = `
             <td>${job.id}</td>
             <td>${job.title}</td>
@@ -432,7 +455,8 @@ function formatDuration(seconds) {
 function initCharts() {
     const barCanvas = document.getElementById("barChart");
     const pieCanvas = document.getElementById("pieChart");
-    if (!barCanvas || !pieCanvas) return;
+    const lineCanvas = document.getElementById("companyLineChart");
+    if (!barCanvas || !pieCanvas || !lineCanvas) return;
 
     barChart = new Chart(barCanvas, {
         type: "bar",
@@ -469,24 +493,51 @@ function initCharts() {
             plugins: { legend: { position: "bottom" } }
         }
     });
+
+    companyLineChart = new Chart(lineCanvas, {
+        type: "line",
+        data: {
+            labels: [],
+            datasets: [{
+                label: "Company Hours",
+                data: [],
+                borderColor: "#2563eb",
+                backgroundColor: "rgba(37, 99, 235, 0.14)",
+                fill: true,
+                tension: 0.35,
+                pointRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true } }
+        }
+    });
 }
 
 
 function updateCharts(chartPayload, completed, progress, pending) {
-    if (!barChart || !pieChart) return;
+    if (!barChart || !pieChart || !companyLineChart) return;
 
     const pieLabels = chartPayload?.pie?.labels || ["Completed", "In Progress", "Pending"];
     const pieData = chartPayload?.pie?.data || [completed, progress, pending];
-    const barLabels = chartPayload?.bar?.labels || ["Completed", "In Progress", "Pending"];
+    const barLabels = chartPayload?.bar?.labels || [];
     const barData = chartPayload?.bar?.data || [completed, progress, pending];
+    const lineLabels = chartPayload?.line?.labels || [];
+    const lineData = chartPayload?.line?.data || [];
 
     barChart.data.labels = barLabels;
     barChart.data.datasets[0].data = barData;
+    barChart.data.datasets[0].label = "Completed Work Items";
     pieChart.data.labels = pieLabels;
     pieChart.data.datasets[0].data = pieData;
+    companyLineChart.data.labels = lineLabels;
+    companyLineChart.data.datasets[0].data = lineData;
 
     barChart.update();
     pieChart.update();
+    companyLineChart.update();
 }
 
 
@@ -494,7 +545,25 @@ function scrollToSection(sectionId) {
     const section = document.getElementById(sectionId);
     if (section) {
         section.scrollIntoView({ behavior: "smooth" });
+        if (sectionId === "tasks") highlightStatusRows("#adminTasksTable", ["In Progress"]);
+        if (sectionId === "jobs") highlightStatusRows("#jobsTable", ["Open"]);
     }
+}
+
+
+function highlightStatusRows(tableSelector, statuses) {
+    const rows = Array.from(document.querySelectorAll(`${tableSelector} tbody tr`));
+    rows.forEach(row => row.classList.remove("focus-row"));
+
+    const matches = rows.filter(row => statuses.includes(row.dataset.status));
+    matches.forEach(row => row.classList.add("focus-row"));
+
+    const first = matches[0];
+    if (first) {
+        first.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    setTimeout(() => matches.forEach(row => row.classList.remove("focus-row")), 4000);
 }
 
 

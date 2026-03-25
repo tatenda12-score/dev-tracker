@@ -65,6 +65,52 @@ def build_user_daily_chart(db: Session, user_id: int, days: int = 7):
         "hours": hour_totals
     }
 
+
+def build_admin_daily_chart(db: Session, days: int = 7):
+    today = now_harare()
+    labels = []
+    completed_items = []
+    performance_hours = []
+
+    for i in range(days - 1, -1, -1):
+        day = today - timedelta(days=i)
+        start_of_day = day.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_of_day = day.replace(hour=23, minute=59, second=59, microsecond=999999)
+
+        tasks_completed = db.query(func.count(models.Task.id)).filter(
+            models.Task.completed_at != None,
+            models.Task.completed_at >= start_of_day,
+            models.Task.completed_at <= end_of_day
+        ).scalar()
+
+        jobs_completed = db.query(func.count(models.JobCard.id)).filter(
+            models.JobCard.closed_at != None,
+            models.JobCard.closed_at >= start_of_day,
+            models.JobCard.closed_at <= end_of_day
+        ).scalar()
+
+        task_hours = db.query(func.coalesce(func.sum(models.Task.hours_spent), 0)).filter(
+            models.Task.completed_at != None,
+            models.Task.completed_at >= start_of_day,
+            models.Task.completed_at <= end_of_day
+        ).scalar()
+
+        job_seconds = db.query(func.coalesce(func.sum(models.JobCard.duration), 0)).filter(
+            models.JobCard.closed_at != None,
+            models.JobCard.closed_at >= start_of_day,
+            models.JobCard.closed_at <= end_of_day
+        ).scalar()
+
+        labels.append(day.strftime("%a"))
+        completed_items.append(int(tasks_completed or 0) + int(jobs_completed or 0))
+        performance_hours.append(round(float(task_hours or 0) + (float(job_seconds or 0) / 3600), 2))
+
+    return {
+        "labels": labels,
+        "completed_items": completed_items,
+        "hours": performance_hours
+    }
+
 # ==========================
 # 1. TOTAL HOURS (USER)
 # ==========================
@@ -278,29 +324,15 @@ def get_charts(
         raise HTTPException(status_code=403, detail="Admin only")
 
     completed = db.query(models.Task).filter(models.Task.status == "Completed").count()
+    completed += db.query(models.JobCard).filter(models.JobCard.status == "Closed").count()
+
     in_progress = db.query(models.Task).filter(models.Task.status == "In Progress").count()
+    in_progress += db.query(models.JobCard).filter(models.JobCard.status == "Open").count()
+
     pending = db.query(models.Task).filter(models.Task.status == "Pending").count()
+    pending += db.query(models.JobCard).filter(models.JobCard.status == "Pending").count()
 
-    today = now_harare()
-    labels = []
-    counts = []
-
-    for i in range(5):
-        day = today - timedelta(days=i)
-        start_of_day = day.replace(hour=0, minute=0, second=0, microsecond=0)
-        end_of_day = day.replace(hour=23, minute=59, second=59, microsecond=999999)
-
-        count = db.query(models.Task).filter(
-            models.Task.created_at != None,
-            models.Task.created_at >= start_of_day,
-            models.Task.created_at <= end_of_day
-        ).count()
-
-        labels.append(day.strftime("%a"))
-        counts.append(count)
-
-    labels.reverse()
-    counts.reverse()
+    chart_data = build_admin_daily_chart(db, days=7)
 
     return {
         "pie": {
@@ -308,7 +340,11 @@ def get_charts(
             "data": [completed, in_progress, pending]
         },
         "bar": {
-            "labels": labels,
-            "data": counts
+            "labels": chart_data["labels"],
+            "data": chart_data["completed_items"]
+        },
+        "line": {
+            "labels": chart_data["labels"],
+            "data": chart_data["hours"]
         }
     }
