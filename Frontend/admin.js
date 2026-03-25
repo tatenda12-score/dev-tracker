@@ -240,7 +240,19 @@ async function loadAllTasks() {
     const tbody = document.querySelector("#adminTasksTable tbody");
     tbody.innerHTML = "";
 
-    tasks.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    tasks.sort((a, b) => {
+        const statusOrder = {
+            "In Progress": 0,
+            "Pending": 1,
+            "Overdue": 2,
+            "Completed": 3
+        };
+        const aRank = statusOrder[a.status] ?? 99;
+        const bRank = statusOrder[b.status] ?? 99;
+
+        if (aRank !== bRank) return aRank - bRank;
+        return new Date(b.created_at) - new Date(a.created_at);
+    });
 
     tasks.forEach(task => {
         const row = document.createElement("tr");
@@ -270,7 +282,19 @@ async function loadAllJobs() {
     const tbody = document.querySelector("#jobsTable tbody");
     tbody.innerHTML = "";
 
-    jobs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    jobs.sort((a, b) => {
+        const statusOrder = {
+            "Open": 0,
+            "Pending": 1,
+            "Overdue": 2,
+            "Closed": 3
+        };
+        const aRank = statusOrder[a.status] ?? 99;
+        const bRank = statusOrder[b.status] ?? 99;
+
+        if (aRank !== bRank) return aRank - bRank;
+        return new Date(b.created_at) - new Date(a.created_at);
+    });
 
     jobs.forEach(job => {
         const row = document.createElement("tr");
