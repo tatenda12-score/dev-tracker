@@ -70,7 +70,8 @@ body {
 .main {
     flex: 1;
     padding: 20px;
-    height: 100vh;
+    min-width: 0;
+    overflow-x: hidden;
     overflow-y: auto;
 }
 
@@ -245,6 +246,16 @@ body {
 .chart-panel {
     max-height: none;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.chart-panel canvas {
+    display: block;
+    width: 100% !important;
+    height: 320px !important;
+    max-height: 320px !important;
+    flex: 1 1 auto;
 }
 
 #adminTasksTable,

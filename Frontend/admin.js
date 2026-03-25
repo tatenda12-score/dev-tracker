@@ -476,6 +476,7 @@ function initCharts() {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: false,
             plugins: { legend: { display: false } },
             scales: { y: { beginAtZero: true } }
         }
@@ -493,6 +494,7 @@ function initCharts() {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: false,
             cutout: "65%",
             plugins: { legend: { position: "bottom" } }
         }
@@ -515,6 +517,7 @@ function initCharts() {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: false,
             scales: { y: { beginAtZero: true } }
         }
     });
