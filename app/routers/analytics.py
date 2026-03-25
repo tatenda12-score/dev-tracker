@@ -273,7 +273,7 @@ def get_my_charts(
                 "labels": ["Completed", "In Progress", "Pending"],
                 "data": [completed, in_progress, pending]
             },
-            "bar": build_user_daily_chart(db, current_user.id, days=5),
+            "bar": build_user_daily_chart(db, current_user.id, days=7),
             "line": build_user_daily_chart(db, current_user.id, days=7)
         }
     }
