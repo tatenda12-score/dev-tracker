@@ -18,6 +18,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     loadDashboard();
     setInterval(loadNotifications, 10000);
+    document.getElementById("inProgressCard")?.addEventListener("click", () => {
+        focusRowsByStatus();
+    });
 });
 
 
@@ -34,13 +37,20 @@ async function loadDashboard() {
 
 
 async function loadKPIs() {
-    const res = await apiRequest("/tasks/my-tasks");
-    const tasks = res?.data || [];
+    const [taskRes, jobRes] = await Promise.all([
+        apiRequest("/tasks/my-tasks"),
+        apiRequest("/job-cards/")
+    ]);
+    const tasks = taskRes?.data || [];
+    const jobs = jobRes?.data || [];
 
     const total = tasks.length;
-    const completed = tasks.filter(task => task.status === "Completed").length;
-    const inProgress = tasks.filter(task => task.status === "In Progress").length;
-    const totalSeconds = tasks.reduce((sum, task) => sum + (task.time_taken || 0), 0);
+    const completed = tasks.filter(task => task.status === "Completed").length +
+        jobs.filter(job => job.status === "Closed").length;
+    const inProgress = tasks.filter(task => task.status === "In Progress").length +
+        jobs.filter(job => job.status === "Open").length;
+    const totalSeconds = tasks.reduce((sum, task) => sum + (task.time_taken || 0), 0) +
+        jobs.reduce((sum, job) => sum + (job.duration || 0), 0);
 
     document.getElementById("assignedTasks").innerText = total;
     document.getElementById("completedTasks").innerText = completed;
@@ -115,6 +125,7 @@ async function loadTasks() {
         row.className = "clickable-row";
         row.id = `task-row-${task.id}`;
         row.dataset.title = (task.title || "").trim().toLowerCase();
+        row.dataset.status = getNormalizedStatus(task.status);
         row.innerHTML = `
             <td>${task.title}</td>
             <td>${getStatusBadge(task.status)}</td>
@@ -138,6 +149,7 @@ async function loadJobs() {
         row.className = "clickable-row";
         row.id = `job-row-${job.id}`;
         row.dataset.title = (job.title || "").trim().toLowerCase();
+        row.dataset.status = getNormalizedStatus(job.status);
         row.innerHTML = `
             <td>#${job.id}</td>
             <td>${job.title}</td>
@@ -174,8 +186,8 @@ async function loadCharts() {
         data: {
             labels: bar.labels || [],
             datasets: [{
-                label: "Tasks Completed",
-                data: bar.tasks || [],
+                label: "Completed Work Items",
+                data: bar.items || [],
                 backgroundColor: "rgba(59, 130, 246, 0.45)",
                 borderColor: "#2563eb",
                 borderWidth: 1,
@@ -229,6 +241,13 @@ function getStatusBadge(status) {
     if (status === "Completed") return `<span class="badge completed">Completed</span>`;
     if (status === "Open") return `<span class="badge progress">Open</span>`;
     if (status === "Closed") return `<span class="badge completed">Closed</span>`;
+    return status;
+}
+
+
+function getNormalizedStatus(status) {
+    if (status === "Open") return "In Progress";
+    if (status === "Closed") return "Completed";
     return status;
 }
 
@@ -389,12 +408,12 @@ function renderUpdates(elementId, updates) {
 
 
 function extractNotificationTarget(message) {
-    const taskMatch = message.match(/task:\s*(.+)$/i);
+    const taskMatch = message.match(/task(?:\s+\w+)*:\s*(.+)$/i);
     if (taskMatch) {
         return { type: "task", title: taskMatch[1].trim().toLowerCase() };
     }
 
-    const jobMatch = message.match(/job:\s*(.+)$/i);
+    const jobMatch = message.match(/job(?:\s+\w+)*:\s*(.+)$/i);
     if (jobMatch) {
         return { type: "job", title: jobMatch[1].trim().toLowerCase() };
     }
@@ -422,6 +441,33 @@ async function focusRowByTitle(tableSelector, type, title) {
     }
 
     setTimeout(() => targetRow.classList.remove("focus-row"), 4000);
+}
+
+
+function clearFocusedRows() {
+    document.querySelectorAll(".focus-row").forEach(row => row.classList.remove("focus-row"));
+}
+
+
+async function focusRowsByStatus() {
+    await Promise.all([loadTasks(), loadJobs()]);
+    clearFocusedRows();
+
+    scrollToSection("tasks");
+
+    const taskRows = Array.from(document.querySelectorAll("#tasksTable tr"))
+        .filter(row => row.dataset.status === "In Progress");
+    const jobRows = Array.from(document.querySelectorAll("#jobsTable tr"))
+        .filter(row => row.dataset.status === "In Progress");
+
+    [...taskRows, ...jobRows].forEach(row => row.classList.add("focus-row"));
+
+    const firstTarget = taskRows[0] || jobRows[0];
+    if (firstTarget) {
+        firstTarget.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    setTimeout(clearFocusedRows, 4000);
 }
 
 

@@ -18,7 +18,7 @@ router = APIRouter(
 def build_user_daily_chart(db: Session, user_id: int, days: int = 7):
     today = now_harare()
     labels = []
-    task_counts = []
+    item_counts = []
     hour_totals = []
 
     for i in range(days - 1, -1, -1):
@@ -33,6 +33,13 @@ def build_user_daily_chart(db: Session, user_id: int, days: int = 7):
             models.Task.completed_at <= end_of_day
         ).scalar()
 
+        jobs_completed = db.query(func.count(models.JobCard.id)).filter(
+            models.JobCard.owner_id == user_id,
+            models.JobCard.closed_at != None,
+            models.JobCard.closed_at >= start_of_day,
+            models.JobCard.closed_at <= end_of_day
+        ).scalar()
+
         hours_completed = db.query(func.coalesce(func.sum(models.Task.hours_spent), 0)).filter(
             models.Task.owner_id == user_id,
             models.Task.completed_at != None,
@@ -40,13 +47,21 @@ def build_user_daily_chart(db: Session, user_id: int, days: int = 7):
             models.Task.completed_at <= end_of_day
         ).scalar()
 
+        job_hours_completed = db.query(func.coalesce(func.sum(models.JobCard.duration), 0)).filter(
+            models.JobCard.owner_id == user_id,
+            models.JobCard.closed_at != None,
+            models.JobCard.closed_at >= start_of_day,
+            models.JobCard.closed_at <= end_of_day
+        ).scalar()
+
         labels.append(day.strftime("%a"))
-        task_counts.append(int(tasks_completed or 0))
-        hour_totals.append(round(float(hours_completed or 0), 2))
+        item_counts.append(int(tasks_completed or 0) + int(jobs_completed or 0))
+        total_seconds = float(hours_completed or 0) * 3600 + float(job_hours_completed or 0)
+        hour_totals.append(round(total_seconds / 3600, 2))
 
     return {
         "labels": labels,
-        "tasks": task_counts,
+        "items": item_counts,
         "hours": hour_totals
     }
 
@@ -184,13 +199,25 @@ def get_my_charts(
         models.Task.owner_id == current_user.id,
         models.Task.status == "Completed"
     ).count()
+    completed += db.query(models.JobCard).filter(
+        models.JobCard.owner_id == current_user.id,
+        models.JobCard.status == "Closed"
+    ).count()
     in_progress = db.query(models.Task).filter(
         models.Task.owner_id == current_user.id,
         models.Task.status == "In Progress"
     ).count()
+    in_progress += db.query(models.JobCard).filter(
+        models.JobCard.owner_id == current_user.id,
+        models.JobCard.status == "Open"
+    ).count()
     pending = db.query(models.Task).filter(
         models.Task.owner_id == current_user.id,
         models.Task.status == "Pending"
+    ).count()
+    pending += db.query(models.JobCard).filter(
+        models.JobCard.owner_id == current_user.id,
+        models.JobCard.status == "Pending"
     ).count()
 
     return {

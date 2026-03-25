@@ -50,6 +50,14 @@
             margin-bottom: 20px;
         }
 
+        .welcome-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
         .notification-bar {
             flex: 1;
             background: white;
@@ -164,6 +172,16 @@
 
         .card {
             padding: 20px;
+        }
+
+        .card.clickable {
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card.clickable:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 28px rgba(15, 23, 42, 0.12);
         }
 
         .card .number {
@@ -398,6 +416,13 @@
     </div>
 
     <div class="main">
+        <div class="welcome-row">
+            <h1 id="dashboardTitle" style="margin:0;">Dashboard</h1>
+            <div class="header-actions">
+                <button onclick="logout()">Logout</button>
+            </div>
+        </div>
+
         <div class="top-strip">
             <div class="notification-bar">
                 <div class="notification-head">
@@ -412,13 +437,7 @@
                 </div>
                 <div class="notification-list" id="notificationsPanel"></div>
             </div>
-
-            <div class="header-actions">
-                <button onclick="logout()">Logout</button>
-            </div>
         </div>
-
-        <h1 id="dashboardTitle">Dashboard</h1>
 
         <div class="kpi" id="dashboard">
             <div class="card">
@@ -429,7 +448,7 @@
                 <h3>Completed</h3>
                 <p class="number" id="completedTasks">0</p>
             </div>
-            <div class="card">
+            <div class="card clickable" id="inProgressCard">
                 <h3>In Progress</h3>
                 <p class="number" id="inProgressTasks">0</p>
             </div>
