@@ -85,12 +85,14 @@ async function loadAdminNotifications() {
     }
 
     notifications.slice(0, 8).forEach(notification => {
-        panel.innerHTML += `
-            <div class="notification-item ${notification.is_read ? "" : "unread"}">
-                <div class="notification-message">${notification.message}</div>
-                <small>${formatDate(notification.created_at)}</small>
-            </div>
+        const item = document.createElement("div");
+        item.className = `notification-item ${notification.is_read ? "" : "unread"}`.trim();
+        item.innerHTML = `
+            <div class="notification-message">${notification.message}</div>
+            <small>${formatDate(notification.created_at)}</small>
         `;
+        item.addEventListener("click", () => handleAdminNotificationClick(notification));
+        panel.appendChild(item);
     });
 }
 
@@ -98,6 +100,23 @@ async function loadAdminNotifications() {
 async function markAdminNotificationsRead() {
     await apiRequest("/tasks/notifications/read", "PUT");
     loadAdminNotifications();
+}
+
+
+async function handleAdminNotificationClick(notification) {
+    await apiRequest(`/tasks/notifications/${notification.id}/read`, "PUT");
+    await loadAdminNotifications();
+
+    const target = extractNotificationTarget(notification.message);
+    if (!target) return;
+
+    if (target.type === "task") {
+        scrollToSection("tasks");
+        await focusRowByTitle("#adminTasksTable", "task", target.title);
+    } else {
+        scrollToSection("jobs");
+        await focusRowByTitle("#jobsTable", "job", target.title);
+    }
 }
 
 
@@ -200,6 +219,8 @@ async function loadAllTasks() {
     tasks.forEach(task => {
         const row = document.createElement("tr");
         row.className = "clickable-row";
+        row.id = `admin-task-row-${task.id}`;
+        row.dataset.title = (task.title || "").trim().toLowerCase();
         row.innerHTML = `
             <td>${task.id}</td>
             <td>${task.owner_name || "N/A"}</td>
@@ -227,6 +248,8 @@ async function loadAllJobs() {
     jobs.forEach(job => {
         const row = document.createElement("tr");
         row.className = "clickable-row";
+        row.id = `admin-job-row-${job.id}`;
+        row.dataset.title = (job.title || "").trim().toLowerCase();
         row.innerHTML = `
             <td>${job.id}</td>
             <td>${job.title}</td>
@@ -352,6 +375,43 @@ function renderUpdates(elementId, updates) {
             </div>
         `;
     });
+}
+
+
+function extractNotificationTarget(message) {
+    const taskMatch = message.match(/task:\s*(.+)$/i);
+    if (taskMatch) {
+        return { type: "task", title: taskMatch[1].trim().toLowerCase() };
+    }
+
+    const jobMatch = message.match(/job:\s*(.+)$/i);
+    if (jobMatch) {
+        return { type: "job", title: jobMatch[1].trim().toLowerCase() };
+    }
+
+    return null;
+}
+
+
+async function focusRowByTitle(tableSelector, type, title) {
+    const table = document.querySelector(tableSelector);
+    if (!table) return;
+
+    const rows = Array.from(table.querySelectorAll("tr"));
+    const targetRow = rows.find(row => row.dataset.title === title);
+    if (!targetRow) return;
+
+    rows.forEach(row => row.classList.remove("focus-row"));
+    targetRow.classList.add("focus-row");
+    targetRow.scrollIntoView({ behavior: "smooth", block: "center" });
+
+    if (type === "task") {
+        await viewAdminTask(targetRow.id.replace("admin-task-row-", ""));
+    } else {
+        await viewAdminJob(targetRow.id.replace("admin-job-row-", ""));
+    }
+
+    setTimeout(() => targetRow.classList.remove("focus-row"), 4000);
 }
 
 

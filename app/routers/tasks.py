@@ -287,6 +287,26 @@ def mark_notifications_read(
     return {"success": True, "message": "Marked as read"}
 
 
+@router.put("/notifications/{notification_id}/read")
+def mark_single_notification_read(
+    notification_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    notification = db.query(models.Notification).filter(
+        models.Notification.id == notification_id,
+        models.Notification.user_id == current_user.id
+    ).first()
+
+    if not notification:
+        raise HTTPException(status_code=404, detail="Notification not found")
+
+    notification.is_read = True
+    db.commit()
+
+    return {"success": True, "message": "Notification marked as read"}
+
+
 @router.get("/my-dashboard")
 def get_my_dashboard(
     db: Session = Depends(get_db),
