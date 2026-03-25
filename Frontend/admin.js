@@ -196,6 +196,7 @@ function closeCreateJobModal() {
 
 function getAdminRowClass(status) {
     if (status === "In Progress" || status === "Open") return "status-active";
+    if (status === "Pending") return "status-pending";
     if (status === "Completed" || status === "Closed") return "status-completed";
     return "";
 }
