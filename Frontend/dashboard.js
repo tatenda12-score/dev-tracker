@@ -1,13 +1,22 @@
-const token = localStorage.getItem("token");
 let currentTaskId = null;
 let currentJobId = null;
 
-if (!token) {
+if (!sessionStorage.getItem("token") && localStorage.getItem("token")) {
+    ["token", "user", "userId", "role", "email", "name"].forEach((key) => {
+        const value = localStorage.getItem(key);
+        if (value !== null) {
+            sessionStorage.setItem(key, value);
+        }
+    });
+    localStorage.clear();
+}
+
+if (!sessionStorage.getItem("token")) {
     window.location.href = "login.html";
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    const user = JSON.parse(localStorage.getItem("user"));
+    const user = JSON.parse(sessionStorage.getItem("user"));
 
     if (user?.name) {
         const title = document.getElementById("dashboardTitle");
@@ -71,7 +80,7 @@ async function loadNotifications() {
     panel.innerHTML = "";
 
     if (!unreadNotifications.length) {
-        panel.innerHTML = `<div class="notification-item">No notifications yet.<small>Everything is quiet for now.</small></div>`;
+        panel.appendChild(createEmptyState("notification-item", "No notifications yet.", "Everything is quiet for now."));
         return;
     }
 
@@ -80,10 +89,12 @@ async function loadNotifications() {
     visibleNotifications.forEach(notification => {
         const item = document.createElement("div");
         item.className = `notification-item ${notification.is_read ? "" : "unread"}`.trim();
-        item.innerHTML = `
-            <div class="notification-message">${notification.message}</div>
-            <small>${formatDate(notification.created_at)}</small>
-        `;
+        const message = document.createElement("div");
+        message.className = "notification-message";
+        message.textContent = notification.message;
+        const timestamp = document.createElement("small");
+        timestamp.textContent = formatDate(notification.created_at);
+        item.append(message, timestamp);
         item.addEventListener("click", () => handleNotificationClick(notification));
         panel.appendChild(item);
     });
@@ -126,11 +137,11 @@ async function loadTasks() {
         row.id = `task-row-${task.id}`;
         row.dataset.title = (task.title || "").trim().toLowerCase();
         row.dataset.status = getNormalizedStatus(task.status);
-        row.innerHTML = `
-            <td>${task.title}</td>
-            <td>${getStatusBadge(task.status)}</td>
-            <td><button class="btn btn-view" onclick="event.stopPropagation(); viewTask(${task.id})">View</button></td>
-        `;
+        row.append(
+            createCell(task.title),
+            createStatusCell(task.status),
+            createActionCell("View", "btn btn-view", () => viewTask(task.id))
+        );
         row.addEventListener("click", () => viewTask(task.id));
         table.appendChild(row);
     });
@@ -150,12 +161,12 @@ async function loadJobs() {
         row.id = `job-row-${job.id}`;
         row.dataset.title = (job.title || "").trim().toLowerCase();
         row.dataset.status = getNormalizedStatus(job.status);
-        row.innerHTML = `
-            <td>#${job.id}</td>
-            <td>${job.title}</td>
-            <td>${getStatusBadge(job.status)}</td>
-            <td><button class="btn btn-view" onclick="event.stopPropagation(); viewJob(${job.id})">View</button></td>
-        `;
+        row.append(
+            createCell(`#${job.id}`),
+            createCell(job.title),
+            createStatusCell(job.status),
+            createActionCell("View", "btn btn-view", () => viewJob(job.id))
+        );
         row.addEventListener("click", () => viewJob(job.id));
         table.appendChild(row);
     });
@@ -236,12 +247,12 @@ async function loadPerformance() {
 
 
 function getStatusBadge(status) {
-    if (status === "Pending") return `<span class="badge pending">Pending</span>`;
-    if (status === "In Progress") return `<span class="badge progress">In Progress</span>`;
-    if (status === "Completed") return `<span class="badge completed">Completed</span>`;
-    if (status === "Open") return `<span class="badge progress">Open</span>`;
-    if (status === "Closed") return `<span class="badge completed">Closed</span>`;
-    return status;
+    const badge = document.createElement("span");
+    badge.textContent = status;
+    if (status === "Pending") badge.className = "badge pending";
+    else if (status === "In Progress" || status === "Open") badge.className = "badge progress";
+    else if (status === "Completed" || status === "Closed") badge.className = "badge completed";
+    return badge;
 }
 
 
@@ -301,13 +312,7 @@ async function viewTask(taskId) {
     document.getElementById("modalAssignedBy").innerText = task.assigned_by_name || "Admin";
 
     const actions = document.getElementById("modalActions");
-    if (task.status === "Pending") {
-        actions.innerHTML = `<button class="btn btn-start" onclick="startTask(${task.id})">Start Task</button>`;
-    } else if (task.status === "In Progress") {
-        actions.innerHTML = `<button class="btn btn-update" onclick="completeTask(${task.id})">Complete Task</button>`;
-    } else {
-        actions.innerHTML = `<span class="badge completed">Completed</span>`;
-    }
+    renderTaskActions(actions, task);
 
     renderUpdates("taskUpdatesList", updates);
     document.getElementById("taskModal").style.display = "block";
@@ -368,13 +373,7 @@ async function viewJob(jobId) {
     document.getElementById("jobAssignedBy").innerText = job.assigned_by_name || "Admin";
 
     const actions = document.getElementById("jobActions");
-    if (job.status === "Pending") {
-        actions.innerHTML = `<button class="btn btn-start" onclick="startJob(${job.id})">Start Job</button>`;
-    } else if (job.status === "Open") {
-        actions.innerHTML = `<button class="btn btn-update" onclick="closeJob(${job.id})">Close Job</button>`;
-    } else {
-        actions.innerHTML = `<span class="badge completed">Closed</span>`;
-    }
+    renderJobActions(actions, job);
 
     renderUpdates("jobUpdatesList", updates);
     document.getElementById("jobModal").style.display = "block";
@@ -391,18 +390,12 @@ function renderUpdates(elementId, updates) {
     container.innerHTML = "";
 
     if (!updates.length) {
-        container.innerHTML = `<div class="update-item">No updates yet.</div>`;
+        container.appendChild(createEmptyState("update-item", "No updates yet."));
         return;
     }
 
     updates.forEach(update => {
-        container.innerHTML += `
-            <div class="update-item">
-                <strong>${update.author_name || "User"} · ${update.author_role || "USER"}</strong>
-                <div>${update.message}</div>
-                <small>${formatDate(update.created_at)}</small>
-            </div>
-        `;
+        container.appendChild(createUpdateItem(update, "User"));
     });
 }
 
@@ -491,6 +484,99 @@ function scrollToSection(section) {
 
 
 function logout() {
+    sessionStorage.clear();
     localStorage.clear();
     window.location.href = "login.html";
+}
+
+function createCell(value) {
+    const cell = document.createElement("td");
+    cell.textContent = value ?? "N/A";
+    return cell;
+}
+
+function createStatusCell(status) {
+    const cell = document.createElement("td");
+    cell.appendChild(getStatusBadge(status));
+    return cell;
+}
+
+function createActionCell(label, className, handler) {
+    const cell = document.createElement("td");
+    const button = document.createElement("button");
+    button.className = className;
+    button.textContent = label;
+    button.addEventListener("click", (event) => {
+        event.stopPropagation();
+        handler();
+    });
+    cell.appendChild(button);
+    return cell;
+}
+
+function createEmptyState(className, title, subtitle = "") {
+    const wrapper = document.createElement("div");
+    wrapper.className = className;
+    wrapper.textContent = title;
+    if (subtitle) {
+        const small = document.createElement("small");
+        small.textContent = subtitle;
+        wrapper.appendChild(small);
+    }
+    return wrapper;
+}
+
+function createUpdateItem(update, fallbackAuthor) {
+    const item = document.createElement("div");
+    item.className = "update-item";
+    const author = document.createElement("strong");
+    author.textContent = `${update.author_name || fallbackAuthor} · ${update.author_role || "USER"}`;
+    const message = document.createElement("div");
+    message.textContent = update.message || "";
+    const time = document.createElement("small");
+    time.textContent = formatDate(update.created_at);
+    item.append(author, message, time);
+    return item;
+}
+
+function renderTaskActions(container, task) {
+    container.innerHTML = "";
+    if (task.status === "Pending") {
+        const button = document.createElement("button");
+        button.className = "btn btn-start";
+        button.textContent = "Start Task";
+        button.addEventListener("click", () => startTask(task.id));
+        container.appendChild(button);
+        return;
+    }
+    if (task.status === "In Progress") {
+        const button = document.createElement("button");
+        button.className = "btn btn-update";
+        button.textContent = "Complete Task";
+        button.addEventListener("click", () => completeTask(task.id));
+        container.appendChild(button);
+        return;
+    }
+    container.appendChild(getStatusBadge("Completed"));
+}
+
+function renderJobActions(container, job) {
+    container.innerHTML = "";
+    if (job.status === "Pending") {
+        const button = document.createElement("button");
+        button.className = "btn btn-start";
+        button.textContent = "Start Job";
+        button.addEventListener("click", () => startJob(job.id));
+        container.appendChild(button);
+        return;
+    }
+    if (job.status === "Open") {
+        const button = document.createElement("button");
+        button.className = "btn btn-update";
+        button.textContent = "Close Job";
+        button.addEventListener("click", () => closeJob(job.id));
+        container.appendChild(button);
+        return;
+    }
+    container.appendChild(getStatusBadge("Closed"));
 }

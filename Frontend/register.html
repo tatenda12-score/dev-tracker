@@ -34,8 +34,6 @@ document.getElementById("registerForm").addEventListener("submit", async (e) => 
         password: password
     });
 
-    console.log(data);
-
     if (data.success) {
         alert(data.message);
         window.location.href = "login.html";

@@ -3,12 +3,42 @@
 // ==========================
 const API_BASE = "https://dev-tracker-yfvj.onrender.com";
 
+function getStorage() {
+    return window.sessionStorage;
+}
+
+function persistAuth(data) {
+    const storage = getStorage();
+    storage.setItem("token", data.access_token);
+    storage.setItem("user", JSON.stringify(data.user));
+    storage.setItem("userId", data.user.id);
+    storage.setItem("role", data.user.role);
+    storage.setItem("email", data.user.email);
+    storage.setItem("name", data.user.name);
+}
+
+function migrateLegacyAuth() {
+    const session = getStorage();
+    if (!session.getItem("token") && localStorage.getItem("token")) {
+        const keys = ["token", "user", "userId", "role", "email", "name"];
+        keys.forEach((key) => {
+            const value = localStorage.getItem(key);
+            if (value !== null) {
+                session.setItem(key, value);
+            }
+        });
+        localStorage.clear();
+    }
+}
+
+migrateLegacyAuth();
+
 
 // ==========================
 // 🔑 GET TOKEN
 // ==========================
 function getToken() {
-    return localStorage.getItem("token");
+    return getStorage().getItem("token");
 }
 
 
@@ -88,13 +118,15 @@ async function loginUser(email, password) {
         }
 
         // ✅ CORRECT STRUCTURE (IMPORTANT)
-        localStorage.setItem("token", result.access_token);
-        localStorage.setItem("userId", result.user.id);
-        localStorage.setItem("role", result.user.role);
-        localStorage.setItem("email", result.user.email);
-        localStorage.setItem("name", result.user.name);
+        const authData = result.data || result;
+        if (!authData?.access_token || !authData?.user) {
+            alert("Invalid server response");
+            return null;
+        }
 
-        return result.user;
+        persistAuth(authData);
+
+        return authData.user;
 
     } catch (error) {
         console.error("Login error:", error);
@@ -116,6 +148,7 @@ async function getCurrentUser() {
 // 🚪 LOGOUT
 // ==========================
 function logout() {
+    sessionStorage.clear();
     localStorage.clear();
     window.location.href = "login.html";
 }

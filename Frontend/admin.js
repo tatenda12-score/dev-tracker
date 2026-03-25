@@ -1,11 +1,24 @@
 const API = "https://dev-tracker-yfvj.onrender.com";
-const token = localStorage.getItem("token");
 
 let barChart = null;
 let pieChart = null;
 let companyLineChart = null;
 let currentAdminTaskId = null;
 let currentAdminJobId = null;
+
+if (!sessionStorage.getItem("token") && localStorage.getItem("token")) {
+    ["token", "user", "userId", "role", "email", "name"].forEach((key) => {
+        const value = localStorage.getItem(key);
+        if (value !== null) {
+            sessionStorage.setItem(key, value);
+        }
+    });
+    localStorage.clear();
+}
+
+if (!sessionStorage.getItem("token")) {
+    window.location.href = "login.html";
+}
 
 
 async function apiRequest(endpoint, method = "GET", data = null) {
@@ -14,7 +27,7 @@ async function apiRequest(endpoint, method = "GET", data = null) {
             method,
             headers: {
                 "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`
+                "Authorization": `Bearer ${sessionStorage.getItem("token") || ""}`
             },
             body: data ? JSON.stringify(data) : null
         });
@@ -99,17 +112,19 @@ async function loadAdminNotifications() {
     panel.innerHTML = "";
 
     if (!unreadNotifications.length) {
-        panel.innerHTML = `<div class="notification-item">No admin notifications yet.<small>Updates will appear here.</small></div>`;
+        panel.appendChild(createEmptyState("notification-item", "No admin notifications yet.", "Updates will appear here."));
         return;
     }
 
     unreadNotifications.slice(0, 8).forEach(notification => {
         const item = document.createElement("div");
         item.className = `notification-item ${notification.is_read ? "" : "unread"}`.trim();
-        item.innerHTML = `
-            <div class="notification-message">${notification.message}</div>
-            <small>${formatDate(notification.created_at)}</small>
-        `;
+        const message = document.createElement("div");
+        message.className = "notification-message";
+        message.textContent = notification.message;
+        const timestamp = document.createElement("small");
+        timestamp.textContent = formatDate(notification.created_at);
+        item.append(message, timestamp);
         item.addEventListener("click", () => handleAdminNotificationClick(notification));
         panel.appendChild(item);
     });
@@ -158,7 +173,7 @@ async function loadUsersForDropdown() {
 
     users.forEach(user => {
         if (user.role !== "ADMIN") {
-            select.innerHTML += `<option value="${user.id}">${user.name}</option>`;
+            select.appendChild(createOption(user.id, user.name));
         }
     });
 }
@@ -210,7 +225,7 @@ async function loadUsersForJobDropdown() {
 
     users.forEach(user => {
         if (user.role !== "ADMIN") {
-            select.innerHTML += `<option value="${user.id}">${user.name}</option>`;
+            select.appendChild(createOption(user.id, user.name));
         }
     });
 }
@@ -261,16 +276,16 @@ async function loadAllTasks() {
         row.id = `admin-task-row-${task.id}`;
         row.dataset.title = (task.title || "").trim().toLowerCase();
         row.dataset.status = task.status;
-        row.innerHTML = `
-            <td>${task.id}</td>
-            <td>${task.owner_name || "N/A"}</td>
-            <td>${task.title}</td>
-            <td>${task.description || "N/A"}</td>
-            <td>${task.status}</td>
-            <td>${task.github_link || "-"}</td>
-            <td>${formatDate(task.created_at)}</td>
-            <td>${formatDuration(task.time_taken)}</td>
-        `;
+        row.append(
+            createCell(task.id),
+            createCell(task.owner_name || "N/A"),
+            createCell(task.title),
+            createCell(task.description || "N/A"),
+            createCell(task.status),
+            createCell(task.github_link || "-"),
+            createCell(formatDate(task.created_at)),
+            createCell(formatDuration(task.time_taken))
+        );
         row.addEventListener("click", () => viewAdminTask(task.id));
         tbody.appendChild(row);
     });
@@ -303,13 +318,13 @@ async function loadAllJobs() {
         row.id = `admin-job-row-${job.id}`;
         row.dataset.title = (job.title || "").trim().toLowerCase();
         row.dataset.status = job.status;
-        row.innerHTML = `
-            <td>${job.id}</td>
-            <td>${job.title}</td>
-            <td>${job.status}</td>
-            <td>${formatDate(job.created_at)}</td>
-            <td>${formatDuration(job.duration)}</td>
-        `;
+        row.append(
+            createCell(job.id),
+            createCell(job.title),
+            createCell(job.status),
+            createCell(formatDate(job.created_at)),
+            createCell(formatDuration(job.duration))
+        );
         row.addEventListener("click", () => viewAdminJob(job.id));
         tbody.appendChild(row);
     });
@@ -415,18 +430,12 @@ function renderUpdates(elementId, updates) {
     container.innerHTML = "";
 
     if (!updates.length) {
-        container.innerHTML = `<div class="update-item">No updates yet.</div>`;
+        container.appendChild(createEmptyState("update-item", "No updates yet."));
         return;
     }
 
     updates.forEach(update => {
-        container.innerHTML += `
-            <div class="update-item">
-                <div><strong>${update.author_name || "Unknown"} · ${update.author_role || "USER"}</strong></div>
-                <div>${update.message}</div>
-                <small>${formatDate(update.created_at)}</small>
-            </div>
-        `;
+        container.appendChild(createUpdateItem(update));
     });
 }
 
@@ -608,8 +617,49 @@ function refreshAll() {
 
 
 function logout() {
+    sessionStorage.clear();
     localStorage.clear();
     window.location.href = "login.html";
+}
+
+function createCell(value) {
+    const cell = document.createElement("td");
+    cell.textContent = value ?? "N/A";
+    return cell;
+}
+
+function createOption(value, label) {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = label;
+    return option;
+}
+
+function createEmptyState(className, title, subtitle = "") {
+    const wrapper = document.createElement("div");
+    wrapper.className = className;
+    wrapper.textContent = title;
+    if (subtitle) {
+        const small = document.createElement("small");
+        small.textContent = subtitle;
+        wrapper.appendChild(small);
+    }
+    return wrapper;
+}
+
+function createUpdateItem(update) {
+    const item = document.createElement("div");
+    item.className = "update-item";
+    const authorRow = document.createElement("div");
+    const author = document.createElement("strong");
+    author.textContent = `${update.author_name || "Unknown"} · ${update.author_role || "USER"}`;
+    authorRow.appendChild(author);
+    const message = document.createElement("div");
+    message.textContent = update.message || "";
+    const time = document.createElement("small");
+    time.textContent = formatDate(update.created_at);
+    item.append(authorRow, message, time);
+    return item;
 }
 
 

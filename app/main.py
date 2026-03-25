@@ -1,6 +1,9 @@
+import logging
+
 from fastapi import FastAPI, Depends, Request, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import inspect
 
 from app.database import engine, Base
 from app.auth import get_current_user
@@ -19,13 +22,18 @@ app = FastAPI(
     version="1.0.0"
 )
 
+logger = logging.getLogger(__name__)
+
 
 # ==========================
 # STARTUP EVENT
 # ==========================
 @app.on_event("startup")
 def startup():
-    Base.metadata.create_all(bind=engine)
+    inspector = inspect(engine)
+    if not inspector.get_table_names():
+        logger.warning("No database tables found. Bootstrapping schema on startup.")
+        Base.metadata.create_all(bind=engine)
 
 
 # ==========================
@@ -96,23 +104,7 @@ def protected_route(current_user=Depends(get_current_user)):
 # ==========================
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    print("🔥 REAL ERROR:", exc)  # 👈 THIS IS KEY
-
-    return JSONResponse(
-        status_code=500,
-        content={
-            "success": False,
-            "data": None,
-            "message": str(exc)  # 👈 SHOW REAL ERROR
-        },
-    )
-
-
-# ==========================
-# GLOBAL ERROR HANDLER
-# ==========================
-@app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
+    logger.exception("Unhandled application error on %s", request.url.path)
     return JSONResponse(
         status_code=500,
         content={
