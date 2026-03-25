@@ -73,18 +73,19 @@ async function loadAdminKPIs() {
 async function loadAdminNotifications() {
     const response = await apiRequest("/tasks/notifications");
     const notifications = response?.data || [];
+    const unreadNotifications = notifications.filter(notification => !notification.is_read);
     const unreadCount = response?.meta?.unread_count || 0;
     const panel = document.getElementById("notificationsPanel");
 
     document.getElementById("adminNotificationCount").innerText = unreadCount;
     panel.innerHTML = "";
 
-    if (!notifications.length) {
+    if (!unreadNotifications.length) {
         panel.innerHTML = `<div class="notification-item">No admin notifications yet.<small>Updates will appear here.</small></div>`;
         return;
     }
 
-    notifications.slice(0, 8).forEach(notification => {
+    unreadNotifications.slice(0, 8).forEach(notification => {
         const item = document.createElement("div");
         item.className = `notification-item ${notification.is_read ? "" : "unread"}`.trim();
         item.innerHTML = `

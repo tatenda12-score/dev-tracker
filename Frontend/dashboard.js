@@ -52,6 +52,7 @@ async function loadKPIs() {
 async function loadNotifications() {
     const res = await apiRequest("/tasks/notifications");
     const notifications = res?.data || [];
+    const unreadNotifications = notifications.filter(notification => !notification.is_read);
     const unreadCount = res?.meta?.unread_count || 0;
     const panel = document.getElementById("notificationsPanel");
 
@@ -59,12 +60,12 @@ async function loadNotifications() {
 
     panel.innerHTML = "";
 
-    if (!notifications.length) {
+    if (!unreadNotifications.length) {
         panel.innerHTML = `<div class="notification-item">No notifications yet.<small>Everything is quiet for now.</small></div>`;
         return;
     }
 
-    const visibleNotifications = notifications.slice(0, 6);
+    const visibleNotifications = unreadNotifications.slice(0, 6);
 
     visibleNotifications.forEach(notification => {
         const item = document.createElement("div");

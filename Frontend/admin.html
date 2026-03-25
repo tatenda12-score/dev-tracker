@@ -90,7 +90,8 @@ body {
 }
 
 .notification-item {
-    flex: 0 0 380px;
+    flex: 0 0 calc(50% - 8px);
+    max-width: 620px;
     background: #f8fafc;
     border: 1px solid #e2e8f0;
     border-radius: 12px;
@@ -365,6 +366,10 @@ body {
 }
 
 @media (max-width: 900px) {
+    .notification-item {
+        flex-basis: 85%;
+    }
+
     .sidebar {
         display: none;
     }
