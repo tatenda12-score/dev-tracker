@@ -484,6 +484,17 @@ body {
     overflow-y: auto;
 }
 
+.closed-note {
+    display: none;
+    margin-top: 14px;
+    padding: 16px 18px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #eef4ff 0%, #f8fbff 100%);
+    border: 1px solid rgba(47, 109, 229, 0.16);
+    color: #42526b;
+    font-weight: 600;
+}
+
 .update-item {
     background: #f8fafc;
     border: 1px solid #e2e8f0;
@@ -735,10 +746,14 @@ body {
             <div class="detail-card"><strong>Completed</strong><span id="adminTaskEnd"></span></div>
         </div>
 
-        <div class="reply-box">
+        <div class="reply-box" id="adminTaskReplyBox">
             <h4>Reply / Comment</h4>
             <textarea id="adminTaskReply" placeholder="Write a reply or note for the user..."></textarea>
             <button onclick="addAdminTaskReply()">Send Comment</button>
+        </div>
+
+        <div id="adminTaskReplyClosedNotice" class="closed-note">
+            This task is completed, so replies and updates are now closed. You can still view the full task information and activity below.
         </div>
 
         <div class="updates-feed" id="adminTaskUpdates"></div>
@@ -777,10 +792,14 @@ body {
             <div class="detail-card"><strong>Duration</strong><span id="adminJobDuration"></span></div>
         </div>
 
-        <div class="reply-box">
+        <div class="reply-box" id="adminJobReplyBox">
             <h4>Reply / Update</h4>
             <textarea id="adminJobReply" placeholder="Write a reply or update for the user..."></textarea>
             <button onclick="addAdminJobReply()">Send Update</button>
+        </div>
+
+        <div id="adminJobReplyClosedNotice" class="closed-note">
+            This job card is closed, so replies and updates are now locked. The job information and update history remain visible below.
         </div>
 
         <div class="updates-feed" id="adminJobUpdates"></div>

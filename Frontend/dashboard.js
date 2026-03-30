@@ -313,6 +313,11 @@ async function viewTask(taskId) {
 
     const actions = document.getElementById("modalActions");
     renderTaskActions(actions, task);
+    toggleUpdateComposer(
+        "taskUpdateComposer",
+        "taskUpdateClosedNotice",
+        task.status !== "Completed"
+    );
 
     renderUpdates("taskUpdatesList", updates);
     document.getElementById("taskModal").style.display = "flex";
@@ -374,6 +379,11 @@ async function viewJob(jobId) {
 
     const actions = document.getElementById("jobActions");
     renderJobActions(actions, job);
+    toggleUpdateComposer(
+        "jobUpdateComposer",
+        "jobUpdateClosedNotice",
+        job.status !== "Closed"
+    );
 
     renderUpdates("jobUpdatesList", updates);
     document.getElementById("jobModal").style.display = "flex";
@@ -397,6 +407,16 @@ function renderUpdates(elementId, updates) {
     updates.forEach(update => {
         container.appendChild(createUpdateItem(update, "User"));
     });
+}
+
+
+function toggleUpdateComposer(composerId, noticeId, isOpen) {
+    const composer = document.getElementById(composerId);
+    const notice = document.getElementById(noticeId);
+    if (!composer || !notice) return;
+
+    composer.style.display = isOpen ? "block" : "none";
+    notice.style.display = isOpen ? "none" : "block";
 }
 
 

@@ -350,11 +350,17 @@ async function viewAdminTask(taskId) {
     document.getElementById("adminTaskGithub").href = task.github_link || "#";
     document.getElementById("adminTaskCreated").innerText = formatDate(task.created_at);
     document.getElementById("adminTaskDuration").innerText = formatDuration(task.time_taken);
-    document.getElementById("adminTaskStart").innerText = formatDate(task.start_time);
-    document.getElementById("adminTaskEnd").innerText = formatDate(task.end_time);
+      document.getElementById("adminTaskStart").innerText = formatDate(task.start_time);
+      document.getElementById("adminTaskEnd").innerText = formatDate(task.end_time);
 
-    renderUpdates("adminTaskUpdates", updates);
-    document.getElementById("adminTaskModal").style.display = "flex";
+      toggleAdminReplyBox(
+          "adminTaskReplyBox",
+          "adminTaskReplyClosedNotice",
+          task.status !== "Completed"
+      );
+
+      renderUpdates("adminTaskUpdates", updates);
+      document.getElementById("adminTaskModal").style.display = "flex";
 }
 
 
@@ -396,12 +402,18 @@ async function viewAdminJob(jobId) {
     document.getElementById("adminJobGithub").innerText = job.github_link || "N/A";
     document.getElementById("adminJobGithub").href = job.github_link || "#";
     document.getElementById("adminJobCreated").innerText = formatDate(job.created_at);
-    document.getElementById("adminJobOpened").innerText = formatDate(job.opened_at);
-    document.getElementById("adminJobClosed").innerText = formatDate(job.closed_at);
-    document.getElementById("adminJobDuration").innerText = formatDuration(job.duration);
+      document.getElementById("adminJobOpened").innerText = formatDate(job.opened_at);
+      document.getElementById("adminJobClosed").innerText = formatDate(job.closed_at);
+      document.getElementById("adminJobDuration").innerText = formatDuration(job.duration);
 
-    renderUpdates("adminJobUpdates", updates);
-    document.getElementById("adminJobModal").style.display = "flex";
+      toggleAdminReplyBox(
+          "adminJobReplyBox",
+          "adminJobReplyClosedNotice",
+          job.status !== "Closed"
+      );
+
+      renderUpdates("adminJobUpdates", updates);
+      document.getElementById("adminJobModal").style.display = "flex";
 }
 
 
@@ -439,6 +451,16 @@ function renderUpdates(elementId, updates) {
     updates.forEach(update => {
         container.appendChild(createUpdateItem(update));
     });
+}
+
+
+function toggleAdminReplyBox(replyBoxId, noticeId, isOpen) {
+    const replyBox = document.getElementById(replyBoxId);
+    const notice = document.getElementById(noticeId);
+    if (!replyBox || !notice) return;
+
+    replyBox.style.display = isOpen ? "block" : "none";
+    notice.style.display = isOpen ? "none" : "block";
 }
 
 
