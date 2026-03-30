@@ -8,10 +8,22 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
+:root {
+    --bg: linear-gradient(180deg, #eef4ff 0%, #f8fafc 48%, #eef2ff 100%);
+    --panel: rgba(255, 255, 255, 0.94);
+    --panel-border: rgba(148, 163, 184, 0.16);
+    --panel-shadow: 0 18px 50px rgba(15, 23, 42, 0.10);
+    --ink: #0f172a;
+    --muted: #64748b;
+    --brand: #2563eb;
+    --brand-dark: #1d4ed8;
+}
+
 body {
     margin: 0;
     font-family: "Segoe UI", sans-serif;
-    background: #f5f6fa;
+    background: var(--bg);
+    color: var(--ink);
 }
 
 .dashboard {
@@ -24,6 +36,10 @@ body {
     background: #0d1b2a;
     color: white;
     padding: 20px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    box-sizing: border-box;
 }
 
 .sidebar h2 {
@@ -69,10 +85,11 @@ body {
 
 .main {
     flex: 1;
-    padding: 20px;
+    padding: 28px;
     min-width: 0;
     overflow-x: hidden;
     overflow-y: auto;
+    box-sizing: border-box;
 }
 
 .admin-header {
@@ -84,10 +101,11 @@ body {
 
 .notification-bar {
     margin-top: 18px;
-    background: white;
-    border-radius: 16px;
-    padding: 16px 18px;
-    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+    background: var(--panel);
+    border-radius: 22px;
+    padding: 18px 22px;
+    box-shadow: var(--panel-shadow);
+    border: 1px solid var(--panel-border);
 }
 
 .notification-head {
@@ -182,12 +200,24 @@ body {
 .detail-actions button,
 .reply-box button,
 .admin-header button {
-    padding: 10px 15px;
+    padding: 11px 16px;
     border: none;
-    border-radius: 10px;
-    background: #2563eb;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--brand) 0%, var(--brand-dark) 100%);
     color: white;
     cursor: pointer;
+    box-shadow: 0 10px 20px rgba(37, 99, 235, 0.20);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.quick-actions button:hover,
+.notification-head button:hover,
+.modal-footer button:hover,
+.detail-actions button:hover,
+.reply-box button:hover,
+.admin-header button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 26px rgba(37, 99, 235, 0.26);
 }
 
 .kpi-container {
@@ -199,9 +229,10 @@ body {
 .card,
 .table-container,
 .detail-section {
-    background: white;
-    border-radius: 16px;
-    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+    background: var(--panel);
+    border-radius: 20px;
+    box-shadow: var(--panel-shadow);
+    border: 1px solid var(--panel-border);
 }
 
 .card {
@@ -234,6 +265,7 @@ body {
 
 .chart-box {
     min-height: 420px;
+    padding: 22px;
 }
 
 .table-container {
@@ -336,18 +368,25 @@ body {
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(15, 23, 42, 0.55);
+    background: rgba(15, 23, 42, 0.58);
+    backdrop-filter: blur(10px);
     z-index: 1000;
     padding: 24px;
     overflow-y: auto;
+    align-items: center;
+    justify-content: center;
 }
 
 .modal-content {
     background: white;
     width: min(820px, 100%);
-    margin: 40px auto;
+    margin: auto;
     padding: 25px;
-    border-radius: 18px;
+    border-radius: 22px;
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.28);
+    scrollbar-gutter: stable;
 }
 
 .modal-header,
@@ -359,8 +398,16 @@ body {
 
 .close-btn {
     cursor: pointer;
-    font-size: 28px;
+    font-size: 32px;
     font-weight: 700;
+    line-height: 1;
+    width: 42px;
+    height: 42px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8fafc;
 }
 
 .form-grid {
@@ -382,11 +429,12 @@ body {
     width: 100%;
     min-height: 120px;
     padding: 10px;
-    border-radius: 8px;
+    border-radius: 12px;
     border: 1px solid #cbd5e1;
     resize: vertical;
     margin-top: 10px;
     box-sizing: border-box;
+    background: #fff;
 }
 
 .detail-grid {
@@ -404,8 +452,8 @@ body {
 
 .summary-block {
     background: #f8fafc;
-    border-radius: 14px;
-    padding: 16px 18px;
+    border-radius: 16px;
+    padding: 18px 20px;
 }
 
 .summary-block strong {
@@ -419,8 +467,8 @@ body {
 
 .detail-card {
     background: #f8fafc;
-    border-radius: 12px;
-    padding: 14px;
+    border-radius: 16px;
+    padding: 16px;
 }
 
 .detail-card strong {

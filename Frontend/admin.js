@@ -157,7 +157,7 @@ async function handleAdminNotificationClick(notification) {
 
 
 function openAssignModal() {
-    document.getElementById("assignModal").style.display = "block";
+    document.getElementById("assignModal").style.display = "flex";
     loadUsersForDropdown();
 }
 
@@ -201,7 +201,7 @@ async function submitTask() {
 
 
 function openCreateJobModal() {
-    document.getElementById("createJobModal").style.display = "block";
+    document.getElementById("createJobModal").style.display = "flex";
     loadUsersForJobDropdown();
 }
 
@@ -354,7 +354,7 @@ async function viewAdminTask(taskId) {
     document.getElementById("adminTaskEnd").innerText = formatDate(task.end_time);
 
     renderUpdates("adminTaskUpdates", updates);
-    document.getElementById("adminTaskModal").style.display = "block";
+    document.getElementById("adminTaskModal").style.display = "flex";
 }
 
 
@@ -401,7 +401,7 @@ async function viewAdminJob(jobId) {
     document.getElementById("adminJobDuration").innerText = formatDuration(job.duration);
 
     renderUpdates("adminJobUpdates", updates);
-    document.getElementById("adminJobModal").style.display = "block";
+    document.getElementById("adminJobModal").style.display = "flex";
 }
 
 
