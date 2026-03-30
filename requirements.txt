@@ -1,6 +1,7 @@
 fastapi
 uvicorn
 Django
+dj-database-url
 SQLAlchemy
 psycopg2-binary
 python-jose
