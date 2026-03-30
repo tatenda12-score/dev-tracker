@@ -14,7 +14,7 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
     formData.append("password", password);
 
     try {
-        const response = await fetch("https://dev-tracker-yfvj.onrender.com/auth/login", {
+        const response = await fetch("/auth/login", {
             method: "POST",
             body: formData
         });

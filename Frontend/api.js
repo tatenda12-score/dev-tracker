@@ -1,7 +1,7 @@
 // ==========================
 // 🔥 API CONFIG
 // ==========================
-const API_BASE = "https://dev-tracker-yfvj.onrender.com";
+const API_BASE = "";
 
 function getStorage() {
     return window.sessionStorage;

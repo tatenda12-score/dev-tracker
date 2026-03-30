@@ -1,4 +1,4 @@
-const API = "https://dev-tracker-yfvj.onrender.com";
+const API = "";
 
 let barChart = null;
 let pieChart = null;
