@@ -1,4 +1,6 @@
-const API = "";
+const API = ["dev-tracker-yfvj.onrender.com", "localhost", "127.0.0.1"].includes(window.location.hostname)
+    ? ""
+    : "https://dev-tracker-yfvj.onrender.com";
 
 let barChart = null;
 let pieChart = null;

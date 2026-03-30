@@ -1,7 +1,9 @@
 // ==========================
 // 🔥 API CONFIG
 // ==========================
-const API_BASE = "";
+const API_BASE = ["dev-tracker-yfvj.onrender.com", "localhost", "127.0.0.1"].includes(window.location.hostname)
+    ? ""
+    : "https://dev-tracker-yfvj.onrender.com";
 
 function getStorage() {
     return window.sessionStorage;

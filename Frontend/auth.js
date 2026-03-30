@@ -12,9 +12,12 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
     const formData = new URLSearchParams();
     formData.append("username", email);
     formData.append("password", password);
+    const authBase = ["dev-tracker-yfvj.onrender.com", "localhost", "127.0.0.1"].includes(window.location.hostname)
+        ? ""
+        : "https://dev-tracker-yfvj.onrender.com";
 
     try {
-        const response = await fetch("/auth/login", {
+        const response = await fetch(authBase + "/auth/login", {
             method: "POST",
             body: formData
         });
