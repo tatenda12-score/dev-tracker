@@ -315,7 +315,7 @@ async function viewTask(taskId) {
     renderTaskActions(actions, task);
 
     renderUpdates("taskUpdatesList", updates);
-    document.getElementById("taskModal").style.display = "block";
+    document.getElementById("taskModal").style.display = "flex";
 }
 
 
@@ -376,7 +376,7 @@ async function viewJob(jobId) {
     renderJobActions(actions, job);
 
     renderUpdates("jobUpdatesList", updates);
-    document.getElementById("jobModal").style.display = "block";
+    document.getElementById("jobModal").style.display = "flex";
 }
 
 
