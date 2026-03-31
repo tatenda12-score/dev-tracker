@@ -186,12 +186,16 @@ async function submitTask() {
     const description = taskDescription.value;
     const owner_id = taskUser.value;
     const github_link = normalizeExternalUrl(taskGithubLink.value);
+    const estimated_hours = parseOptionalNumber(taskHours.value);
+    const due_date = taskDeadline.value || null;
 
     const result = await apiRequest("/tasks/assign-task", "POST", {
         title,
         description,
         owner_id: parseInt(owner_id),
-        github_link
+        github_link,
+        estimated_hours,
+        due_date
     });
 
     if (!result) return;
@@ -216,6 +220,7 @@ function closeCreateJobModal() {
 function getAdminRowClass(status) {
     if (status === "In Progress" || status === "Open") return "status-active";
     if (status === "Pending") return "status-pending";
+    if (status === "Overdue") return "danger-row";
     if (status === "Completed" || status === "Closed") return "status-completed";
     return "";
 }
@@ -240,12 +245,16 @@ async function submitJob() {
     const description = jobDescription.value;
     const owner_id = jobUser.value;
     const github_link = normalizeExternalUrl(jobGithubLink.value);
+    const estimated_hours = parseOptionalNumber(jobHours.value);
+    const due_date = jobDeadline.value || null;
 
     const result = await apiRequest("/job-cards/", "POST", {
         title,
         description,
         owner_id: parseInt(owner_id),
-        github_link
+        github_link,
+        estimated_hours,
+        due_date
     });
 
     if (!result) return;
@@ -683,6 +692,14 @@ function normalizeExternalUrl(url) {
     if (!value) return "";
     if (/^https?:\/\//i.test(value)) return value;
     return `https://${value}`;
+}
+
+
+function parseOptionalNumber(value) {
+    const normalized = (value || "").trim();
+    if (!normalized) return null;
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : null;
 }
 
 function createOption(value, label) {

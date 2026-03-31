@@ -416,13 +416,15 @@ function syncTaskUpdateComposer(task) {
     const notice = document.getElementById("taskUpdateClosedNotice");
     if (!notice) return;
 
-    if (task.status === "In Progress") {
+    if (canTaskReceiveUpdates(task)) {
         toggleUpdateComposer("taskUpdateComposer", "taskUpdateClosedNotice", true);
         return;
     }
 
-    if (task.status === "Pending") {
-        notice.textContent = "Start this task first to open comments and progress updates. The task details stay visible below.";
+    if (task.status === "Pending" || (task.status === "Overdue" && !task.start_time)) {
+        notice.textContent = task.status === "Overdue"
+            ? "This task is overdue and has not been started. Start it first to open comments and progress updates."
+            : "Start this task first to open comments and progress updates. The task details stay visible below.";
         toggleUpdateComposer("taskUpdateComposer", "taskUpdateClosedNotice", false);
         return;
     }
@@ -436,13 +438,15 @@ function syncJobUpdateComposer(job) {
     const notice = document.getElementById("jobUpdateClosedNotice");
     if (!notice) return;
 
-    if (job.status === "Open") {
+    if (canJobReceiveUpdates(job)) {
         toggleUpdateComposer("jobUpdateComposer", "jobUpdateClosedNotice", true);
         return;
     }
 
-    if (job.status === "Pending") {
-        notice.textContent = "Start this job card first to open updates. The job details and history remain visible below.";
+    if (job.status === "Pending" || (job.status === "Overdue" && !job.opened_at)) {
+        notice.textContent = job.status === "Overdue"
+            ? "This job card is overdue and has not been started. Start it first to open updates."
+            : "Start this job card first to open updates. The job details and history remain visible below.";
         toggleUpdateComposer("jobUpdateComposer", "jobUpdateClosedNotice", false);
         return;
     }
@@ -601,18 +605,18 @@ function createUpdateItem(update, fallbackAuthor) {
 
 function renderTaskActions(container, task) {
     container.innerHTML = "";
-    if (task.status === "Pending") {
+    if (canTaskBeStarted(task)) {
         const button = document.createElement("button");
         button.className = "btn btn-start";
-        button.textContent = "Start Task";
+        button.textContent = task.status === "Overdue" ? "Start Overdue Task" : "Start Task";
         button.addEventListener("click", () => startTask(task.id));
         container.appendChild(button);
         return;
     }
-    if (task.status === "In Progress") {
+    if (canTaskBeCompleted(task)) {
         const button = document.createElement("button");
         button.className = "btn btn-update";
-        button.textContent = "Complete Task";
+        button.textContent = task.status === "Overdue" ? "Complete Overdue Task" : "Complete Task";
         button.addEventListener("click", () => completeTask(task.id));
         container.appendChild(button);
         return;
@@ -622,21 +626,51 @@ function renderTaskActions(container, task) {
 
 function renderJobActions(container, job) {
     container.innerHTML = "";
-    if (job.status === "Pending") {
+    if (canJobBeStarted(job)) {
         const button = document.createElement("button");
         button.className = "btn btn-start";
-        button.textContent = "Start Job";
+        button.textContent = job.status === "Overdue" ? "Start Overdue Job" : "Start Job";
         button.addEventListener("click", () => startJob(job.id));
         container.appendChild(button);
         return;
     }
-    if (job.status === "Open") {
+    if (canJobBeClosed(job)) {
         const button = document.createElement("button");
         button.className = "btn btn-update";
-        button.textContent = "Close Job";
+        button.textContent = job.status === "Overdue" ? "Close Overdue Job" : "Close Job";
         button.addEventListener("click", () => closeJob(job.id));
         container.appendChild(button);
         return;
     }
     container.appendChild(getStatusBadge("Closed"));
+}
+
+
+function canTaskBeStarted(task) {
+    return (task.status === "Pending" || task.status === "Overdue") && !task.start_time && !task.end_time;
+}
+
+
+function canTaskBeCompleted(task) {
+    return (task.status === "In Progress" || task.status === "Overdue") && !!task.start_time && !task.end_time;
+}
+
+
+function canTaskReceiveUpdates(task) {
+    return !!task.start_time && !task.end_time && (task.status === "In Progress" || task.status === "Overdue");
+}
+
+
+function canJobBeStarted(job) {
+    return (job.status === "Pending" || job.status === "Overdue") && !job.opened_at && !job.closed_at;
+}
+
+
+function canJobBeClosed(job) {
+    return (job.status === "Open" || job.status === "Overdue") && !!job.opened_at && !job.closed_at;
+}
+
+
+function canJobReceiveUpdates(job) {
+    return !!job.opened_at && !job.closed_at && (job.status === "Open" || job.status === "Overdue");
 }

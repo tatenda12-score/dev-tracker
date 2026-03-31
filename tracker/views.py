@@ -1,5 +1,5 @@
 import json
-from datetime import timedelta
+from datetime import datetime, time, timedelta
 
 from django.db.models import Sum
 from django.http import JsonResponse
@@ -26,6 +26,8 @@ def serialize_task(task):
         "description": task.description,
         "status": task.status,
         "created_at": task.created_at.isoformat() if task.created_at else None,
+        "estimated_hours": float(task.estimated_hours) if task.estimated_hours is not None else None,
+        "due_at": task.due_at.isoformat() if task.due_at else None,
         "start_time": task.start_time.isoformat() if task.start_time else None,
         "end_time": task.end_time.isoformat() if task.end_time else None,
         "time_taken": float(task.time_taken or 0),
@@ -56,6 +58,8 @@ def serialize_job(job):
         "owner_id": job.owner_id,
         "assigned_by_id": job.assigned_by_id,
         "created_at": job.created_at.isoformat() if job.created_at else None,
+        "estimated_hours": float(job.estimated_hours) if job.estimated_hours is not None else None,
+        "due_at": job.due_at.isoformat() if job.due_at else None,
         "opened_at": job.opened_at.isoformat() if job.opened_at else None,
         "closed_at": job.closed_at.isoformat() if job.closed_at else None,
         "duration": float(job.duration or 0),
@@ -75,6 +79,72 @@ def serialize_job_update(update):
 
 def create_notification(user_id, sender_id, message):
     Notification.objects.create(message=message, user_id=user_id, sender_id=sender_id, is_read=False, created_at=now_harare())
+
+
+def parse_optional_float(value):
+    if value in (None, ""):
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def resolve_due_at(raw_due_date, estimated_hours, base_time):
+    if raw_due_date:
+        try:
+            due_date = datetime.strptime(raw_due_date, "%Y-%m-%d").date()
+            return ensure_harare(datetime.combine(due_date, time(23, 59, 59)))
+        except ValueError:
+            pass
+    if estimated_hours and estimated_hours > 0:
+        return ensure_harare(base_time) + timedelta(hours=estimated_hours)
+    return None
+
+
+def refresh_task_status(task, save=True):
+    if task.status == "Completed":
+        return task
+
+    now = now_harare()
+    if task.due_at and ensure_harare(task.due_at) < now:
+        desired_status = "Overdue"
+    elif task.start_time:
+        desired_status = "In Progress"
+    else:
+        desired_status = "Pending"
+
+    if task.status != desired_status:
+        task.status = desired_status
+        if save:
+            task.save(update_fields=["status"])
+    return task
+
+
+def refresh_job_status(job, save=True):
+    if job.status == "Closed":
+        return job
+
+    now = now_harare()
+    if job.due_at and ensure_harare(job.due_at) < now:
+        desired_status = "Overdue"
+    elif job.opened_at:
+        desired_status = "Open"
+    else:
+        desired_status = "Pending"
+
+    if job.status != desired_status:
+        job.status = desired_status
+        if save:
+            job.save(update_fields=["status"])
+    return job
+
+
+def refresh_active_work_states():
+    for task in Task.objects.exclude(status="Completed"):
+        refresh_task_status(task)
+    for job in JobCard.objects.exclude(status="Closed"):
+        refresh_job_status(job)
 
 
 def build_user_daily_chart(user_id: int, days: int = 7):
@@ -211,6 +281,7 @@ def my_tasks(request):
     current_user, error = require_auth(request)
     if error:
         return error
+    refresh_active_work_states()
     tasks = Task.objects.filter(owner=current_user).order_by("-id")
     return JsonResponse({"success": True, "data": [serialize_task(task) for task in tasks]})
 
@@ -219,6 +290,7 @@ def tasks_collection(request):
     current_user, error = require_admin(request)
     if error:
         return error
+    refresh_active_work_states()
     tasks = Task.objects.select_related("owner").order_by("-id")
     data = [{
         "id": task.id,
@@ -226,6 +298,8 @@ def tasks_collection(request):
         "description": task.description,
         "status": task.status,
         "github_link": task.github_link,
+        "estimated_hours": float(task.estimated_hours) if task.estimated_hours is not None else None,
+        "due_at": task.due_at.isoformat() if task.due_at else None,
         "owner_name": task.owner.name if task.owner_id else "Unknown",
         "created_at": task.created_at.isoformat() if task.created_at else None,
         "time_taken": float(task.time_taken or 0),
@@ -243,11 +317,15 @@ def start_task(request, task_id):
         return JsonResponse({"detail": "Task not found"}, status=404)
     if task.owner_id != current_user.id:
         return JsonResponse({"detail": "Not allowed"}, status=403)
+    refresh_task_status(task)
     if task.status == "In Progress":
         return JsonResponse({"success": False, "message": "Already started"})
+    if task.status == "Completed":
+        return JsonResponse({"success": False, "message": "Already completed"})
     task.status = "In Progress"
     task.start_time = now_harare()
     task.save(update_fields=["status", "start_time"])
+    refresh_task_status(task)
     return JsonResponse({"success": True, "message": "Task started"})
 
 
@@ -263,6 +341,7 @@ def complete_task(request, task_id):
         return JsonResponse({"detail": "Not allowed"}, status=403)
     if not task.start_time:
         return JsonResponse({"success": False, "message": "Start task first"})
+    refresh_task_status(task)
     if task.status == "Completed":
         return JsonResponse({"success": False, "message": "Already completed"})
     task.status = "Completed"
@@ -286,6 +365,9 @@ def assign_task(request):
     owner_id = data.get("owner_id")
     if not title or not owner_id:
         return JsonResponse({"detail": "Missing fields"}, status=400)
+    created_at = now_harare()
+    estimated_hours = parse_optional_float(data.get("estimated_hours"))
+    due_at = resolve_due_at(data.get("due_date"), estimated_hours, created_at)
     task = Task.objects.create(
         title=title,
         description=data.get("description"),
@@ -293,7 +375,9 @@ def assign_task(request):
         assigned_by=current_user,
         status="Pending",
         github_link=data.get("github_link"),
-        created_at=now_harare(),
+        created_at=created_at,
+        estimated_hours=estimated_hours,
+        due_at=due_at,
     )
     create_notification(task.owner_id, current_user.id, f"New task assigned: {title}")
     return JsonResponse({"success": True, "message": "Task assigned successfully"})
@@ -309,6 +393,9 @@ def add_task_update(request, task_id):
         return JsonResponse({"detail": "Task not found"}, status=404)
     if current_user.role != "ADMIN" and task.owner_id != current_user.id:
         return JsonResponse({"detail": "Not allowed"}, status=403)
+    refresh_task_status(task)
+    if current_user.role != "ADMIN" and (not task.start_time or task.end_time):
+        return JsonResponse({"detail": "Task must be started before adding updates"}, status=400)
     data = parse_body(request)
     message = (data.get("message") or "").strip()
     if not message:
@@ -360,6 +447,7 @@ def my_dashboard(request):
     current_user, error = require_auth(request)
     if error:
         return error
+    refresh_active_work_states()
     tasks = Task.objects.filter(owner=current_user)
     total_seconds = sum(task.time_taken or 0 for task in tasks)
     return JsonResponse({"success": True, "data": {
@@ -380,6 +468,7 @@ def task_detail(request, task_id):
         return JsonResponse({"detail": "Task not found"}, status=404)
     if current_user.role != "ADMIN" and task.owner_id != current_user.id:
         return JsonResponse({"detail": "Not allowed"}, status=403)
+    refresh_task_status(task)
     updates = TaskUpdate.objects.filter(task=task).select_related("author").order_by("created_at")
     return JsonResponse({"success": True, "data": {
         "task": {**serialize_task(task), "owner_name": task.owner.name, "assigned_by_name": task.assigned_by.name},
@@ -399,6 +488,9 @@ def job_cards_collection(request):
         owner_id = data.get("owner_id")
         if not title or not owner_id:
             return JsonResponse({"detail": "Missing required fields"}, status=400)
+        created_at = now_harare()
+        estimated_hours = parse_optional_float(data.get("estimated_hours"))
+        due_at = resolve_due_at(data.get("due_date"), estimated_hours, created_at)
         job = JobCard.objects.create(
             title=title,
             description=data.get("description"),
@@ -406,10 +498,13 @@ def job_cards_collection(request):
             assigned_by=current_user,
             status="Pending",
             github_link=data.get("github_link"),
-            created_at=now_harare(),
+            created_at=created_at,
+            estimated_hours=estimated_hours,
+            due_at=due_at,
         )
         create_notification(job.owner_id, current_user.id, f"New job assigned: {title}")
         return JsonResponse({"success": True, "message": "Job created successfully", "data": serialize_job(job)})
+    refresh_active_work_states()
     jobs = JobCard.objects.order_by("-id") if current_user.role == "ADMIN" else JobCard.objects.filter(owner=current_user).order_by("-id")
     return JsonResponse({"success": True, "data": [serialize_job(job) for job in jobs]})
 
@@ -424,6 +519,7 @@ def open_job(request, job_id):
         return JsonResponse({"detail": "Job not found"}, status=404)
     if job.owner_id != current_user.id:
         return JsonResponse({"detail": "Not allowed"}, status=403)
+    refresh_job_status(job)
     if job.status == "Closed":
         return JsonResponse({"detail": "Job already closed"}, status=400)
     if job.status == "Open":
@@ -431,6 +527,7 @@ def open_job(request, job_id):
     job.status = "Open"
     job.opened_at = now_harare()
     job.save(update_fields=["status", "opened_at"])
+    refresh_job_status(job)
     return JsonResponse({"success": True, "message": "Job started"})
 
 
@@ -444,8 +541,9 @@ def add_job_update(request, job_id):
         return JsonResponse({"detail": "Job not found"}, status=404)
     if current_user.role != "ADMIN" and job.owner_id != current_user.id:
         return JsonResponse({"detail": "Not allowed"}, status=403)
-    if current_user.role != "ADMIN" and job.status != "Open":
-        return JsonResponse({"detail": "Job must be open"}, status=400)
+    refresh_job_status(job)
+    if current_user.role != "ADMIN" and (not job.opened_at or job.closed_at):
+        return JsonResponse({"detail": "Job must be started before adding updates"}, status=400)
     data = parse_body(request)
     message = (data.get("message") or "").strip()
     if not message:
@@ -469,6 +567,7 @@ def close_job(request, job_id):
         return JsonResponse({"detail": "Job not found"}, status=404)
     if job.owner_id != current_user.id:
         return JsonResponse({"detail": "Not allowed"}, status=403)
+    refresh_job_status(job)
     job.status = "Closed"
     job.closed_at = now_harare()
     if job.opened_at and job.closed_at:
@@ -488,6 +587,7 @@ def job_detail(request, job_id):
         return JsonResponse({"detail": "Job not found"}, status=404)
     if current_user.role != "ADMIN" and job.owner_id != current_user.id:
         return JsonResponse({"detail": "Not allowed"}, status=403)
+    refresh_job_status(job)
     updates = JobUpdate.objects.filter(job=job).order_by("created_at")
     return JsonResponse({"success": True, "data": {
         "job": {**serialize_job(job), "owner_name": job.owner.name, "assigned_by_name": job.assigned_by.name},
@@ -547,6 +647,7 @@ def my_charts(request):
     current_user, error = require_auth(request)
     if error:
         return error
+    refresh_active_work_states()
     completed = Task.objects.filter(owner=current_user, status="Completed").count() + JobCard.objects.filter(owner=current_user, status="Closed").count()
     in_progress = Task.objects.filter(owner=current_user, status="In Progress").count() + JobCard.objects.filter(owner=current_user, status="Open").count()
     pending = Task.objects.filter(owner=current_user, status="Pending").count() + JobCard.objects.filter(owner=current_user, status="Pending").count()
@@ -561,11 +662,12 @@ def admin_dashboard(request):
     _, error = require_admin(request)
     if error:
         return error
+    refresh_active_work_states()
     return JsonResponse({
         "total_jobs": JobCard.objects.count(),
         "active_tasks": Task.objects.filter(status="In Progress").count(),
         "completed_tasks": Task.objects.filter(status="Completed").count(),
-        "overdue_tasks": Task.objects.filter(status="Overdue").count(),
+        "overdue_tasks": Task.objects.filter(status="Overdue").count() + JobCard.objects.filter(status="Overdue").count(),
     })
 
 
@@ -573,6 +675,7 @@ def analytics_charts(request):
     _, error = require_admin(request)
     if error:
         return error
+    refresh_active_work_states()
     completed = Task.objects.filter(status="Completed").count() + JobCard.objects.filter(status="Closed").count()
     in_progress = Task.objects.filter(status="In Progress").count() + JobCard.objects.filter(status="Open").count()
     pending = Task.objects.filter(status="Pending").count() + JobCard.objects.filter(status="Pending").count()
