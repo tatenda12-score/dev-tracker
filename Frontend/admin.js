@@ -185,11 +185,13 @@ async function submitTask() {
     const title = taskTitle.value;
     const description = taskDescription.value;
     const owner_id = taskUser.value;
+    const github_link = normalizeExternalUrl(taskGithubLink.value);
 
     const result = await apiRequest("/tasks/assign-task", "POST", {
         title,
         description,
-        owner_id: parseInt(owner_id)
+        owner_id: parseInt(owner_id),
+        github_link
     });
 
     if (!result) return;
@@ -237,11 +239,13 @@ async function submitJob() {
     const title = jobService.value;
     const description = jobDescription.value;
     const owner_id = jobUser.value;
+    const github_link = normalizeExternalUrl(jobGithubLink.value);
 
     const result = await apiRequest("/job-cards/", "POST", {
         title,
         description,
-        owner_id: parseInt(owner_id)
+        owner_id: parseInt(owner_id),
+        github_link
     });
 
     if (!result) return;
@@ -284,7 +288,7 @@ async function loadAllTasks() {
             createCell(task.title),
             createCell(task.description || "N/A"),
             createCell(task.status),
-            createCell(task.github_link || "-"),
+            createLinkCell(task.github_link),
             createCell(formatDate(task.created_at)),
             createCell(formatDuration(task.time_taken))
         );
@@ -324,6 +328,7 @@ async function loadAllJobs() {
             createCell(job.id),
             createCell(job.title),
             createCell(job.status),
+            createLinkCell(job.github_link),
             createCell(formatDate(job.created_at)),
             createCell(formatDuration(job.duration))
         );
@@ -347,7 +352,7 @@ async function viewAdminTask(taskId) {
     document.getElementById("adminTaskAssignedBy").innerText = task.assigned_by_name || "Unknown";
     document.getElementById("adminTaskStatus").innerText = task.status;
     document.getElementById("adminTaskGithub").innerText = task.github_link || "N/A";
-    document.getElementById("adminTaskGithub").href = task.github_link || "#";
+    document.getElementById("adminTaskGithub").href = normalizeExternalUrl(task.github_link) || "#";
     document.getElementById("adminTaskCreated").innerText = formatDate(task.created_at);
     document.getElementById("adminTaskDuration").innerText = formatDuration(task.time_taken);
       document.getElementById("adminTaskStart").innerText = formatDate(task.start_time);
@@ -400,7 +405,7 @@ async function viewAdminJob(jobId) {
     document.getElementById("adminJobAssignedBy").innerText = job.assigned_by_name || "Unknown";
     document.getElementById("adminJobStatus").innerText = job.status;
     document.getElementById("adminJobGithub").innerText = job.github_link || "N/A";
-    document.getElementById("adminJobGithub").href = job.github_link || "#";
+    document.getElementById("adminJobGithub").href = normalizeExternalUrl(job.github_link) || "#";
     document.getElementById("adminJobCreated").innerText = formatDate(job.created_at);
       document.getElementById("adminJobOpened").innerText = formatDate(job.opened_at);
       document.getElementById("adminJobClosed").innerText = formatDate(job.closed_at);
@@ -650,6 +655,34 @@ function createCell(value) {
     const cell = document.createElement("td");
     cell.textContent = value ?? "N/A";
     return cell;
+}
+
+
+function createLinkCell(url) {
+    const cell = document.createElement("td");
+    const normalizedUrl = normalizeExternalUrl(url);
+
+    if (!normalizedUrl) {
+        cell.textContent = "-";
+        return cell;
+    }
+
+    const link = document.createElement("a");
+    link.href = normalizedUrl;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = "Open Link";
+    link.addEventListener("click", (event) => event.stopPropagation());
+    cell.appendChild(link);
+    return cell;
+}
+
+
+function normalizeExternalUrl(url) {
+    const value = (url || "").trim();
+    if (!value) return "";
+    if (/^https?:\/\//i.test(value)) return value;
+    return `https://${value}`;
 }
 
 function createOption(value, label) {

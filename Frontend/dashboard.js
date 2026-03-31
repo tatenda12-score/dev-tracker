@@ -305,7 +305,7 @@ async function viewTask(taskId) {
     document.getElementById("modalDescription").innerText = task.description || "No description provided";
     document.getElementById("modalStatus").innerText = task.status;
     document.getElementById("modalGithub").innerText = task.github_link || "N/A";
-    document.getElementById("modalGithub").href = task.github_link || "#";
+    document.getElementById("modalGithub").href = normalizeExternalUrl(task.github_link) || "#";
     document.getElementById("modalStart").innerText = formatDate(task.start_time);
     document.getElementById("modalEnd").innerText = formatDate(task.end_time);
     document.getElementById("modalTime").innerText = formatTime(task.time_taken);
@@ -313,11 +313,7 @@ async function viewTask(taskId) {
 
     const actions = document.getElementById("modalActions");
     renderTaskActions(actions, task);
-    toggleUpdateComposer(
-        "taskUpdateComposer",
-        "taskUpdateClosedNotice",
-        task.status !== "Completed"
-    );
+    syncTaskUpdateComposer(task);
 
     renderUpdates("taskUpdatesList", updates);
     document.getElementById("taskModal").style.display = "flex";
@@ -371,7 +367,7 @@ async function viewJob(jobId) {
     document.getElementById("jobDescription").innerText = job.description || "No description provided";
     document.getElementById("jobStatus").innerText = job.status;
     document.getElementById("jobGithub").innerText = job.github_link || "N/A";
-    document.getElementById("jobGithub").href = job.github_link || "#";
+    document.getElementById("jobGithub").href = normalizeExternalUrl(job.github_link) || "#";
     document.getElementById("jobCreated").innerText = formatDate(job.created_at);
     document.getElementById("jobOpened").innerText = formatDate(job.opened_at);
     document.getElementById("jobClosed").innerText = formatDate(job.closed_at);
@@ -379,11 +375,7 @@ async function viewJob(jobId) {
 
     const actions = document.getElementById("jobActions");
     renderJobActions(actions, job);
-    toggleUpdateComposer(
-        "jobUpdateComposer",
-        "jobUpdateClosedNotice",
-        job.status !== "Closed"
-    );
+    syncJobUpdateComposer(job);
 
     renderUpdates("jobUpdatesList", updates);
     document.getElementById("jobModal").style.display = "flex";
@@ -417,6 +409,54 @@ function toggleUpdateComposer(composerId, noticeId, isOpen) {
 
     composer.style.display = isOpen ? "block" : "none";
     notice.style.display = isOpen ? "none" : "block";
+}
+
+
+function syncTaskUpdateComposer(task) {
+    const notice = document.getElementById("taskUpdateClosedNotice");
+    if (!notice) return;
+
+    if (task.status === "In Progress") {
+        toggleUpdateComposer("taskUpdateComposer", "taskUpdateClosedNotice", true);
+        return;
+    }
+
+    if (task.status === "Pending") {
+        notice.textContent = "Start this task first to open comments and progress updates. The task details stay visible below.";
+        toggleUpdateComposer("taskUpdateComposer", "taskUpdateClosedNotice", false);
+        return;
+    }
+
+    notice.textContent = "This task is completed, so comments and updates are now closed. You can still review the full task history below.";
+    toggleUpdateComposer("taskUpdateComposer", "taskUpdateClosedNotice", false);
+}
+
+
+function syncJobUpdateComposer(job) {
+    const notice = document.getElementById("jobUpdateClosedNotice");
+    if (!notice) return;
+
+    if (job.status === "Open") {
+        toggleUpdateComposer("jobUpdateComposer", "jobUpdateClosedNotice", true);
+        return;
+    }
+
+    if (job.status === "Pending") {
+        notice.textContent = "Start this job card first to open updates. The job details and history remain visible below.";
+        toggleUpdateComposer("jobUpdateComposer", "jobUpdateClosedNotice", false);
+        return;
+    }
+
+    notice.textContent = "This job card is closed, so new updates are locked. The job details and update history remain available below.";
+    toggleUpdateComposer("jobUpdateComposer", "jobUpdateClosedNotice", false);
+}
+
+
+function normalizeExternalUrl(url) {
+    const value = (url || "").trim();
+    if (!value) return "";
+    if (/^https?:\/\//i.test(value)) return value;
+    return `https://${value}`;
 }
 
 

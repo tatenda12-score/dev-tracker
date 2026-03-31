@@ -646,6 +646,7 @@ body {
                     <th>ID</th>
                     <th>Title</th>
                     <th>Status</th>
+                    <th>GitHub</th>
                     <th>Created</th>
                     <th>Duration</th>
                 </tr>
@@ -664,17 +665,18 @@ body {
             <span onclick="closeAssignModal()" class="close-btn">&times;</span>
         </div>
 
-        <div class="form-grid">
-            <input id="taskTitle" placeholder="Task Title">
-            <select id="taskUser"></select>
-            <select id="taskPriority">
-                <option>Low</option>
-                <option selected>Medium</option>
-                <option>High</option>
-            </select>
-            <input id="taskHours" placeholder="Estimated Hours">
-            <input type="date" id="taskDeadline">
-        </div>
+          <div class="form-grid">
+              <input id="taskTitle" placeholder="Task Title">
+              <select id="taskUser"></select>
+              <select id="taskPriority">
+                  <option>Low</option>
+                  <option selected>Medium</option>
+                  <option>High</option>
+              </select>
+              <input id="taskHours" placeholder="Estimated Hours">
+              <input type="date" id="taskDeadline">
+              <input id="taskGithubLink" placeholder="GitHub Link (optional)">
+          </div>
 
         <textarea id="taskDescription" placeholder="Task Description" rows="5"></textarea>
 
@@ -692,18 +694,19 @@ body {
             <span onclick="closeCreateJobModal()" class="close-btn">&times;</span>
         </div>
 
-        <div class="form-grid">
-            <input id="jobCustomer" placeholder="Customer Name">
-            <input id="jobContact" placeholder="Contact">
-            <input id="jobService" placeholder="Enter Service (e.g. Electronics Repair)">
-            <select id="jobPriority">
+          <div class="form-grid">
+              <input id="jobCustomer" placeholder="Customer Name">
+              <input id="jobContact" placeholder="Contact">
+              <input id="jobService" placeholder="Enter Service (e.g. Electronics Repair)">
+              <select id="jobPriority">
                 <option>Low</option>
                 <option selected>Medium</option>
                 <option>High</option>
-            </select>
-            <select id="jobUser"></select>
-            <input type="date" id="jobDeadline">
-        </div>
+              </select>
+              <select id="jobUser"></select>
+              <input type="date" id="jobDeadline">
+              <input id="jobGithubLink" placeholder="GitHub Link (optional)">
+          </div>
 
         <textarea id="jobDescription" placeholder="Job Description" rows="5"></textarea>
 
