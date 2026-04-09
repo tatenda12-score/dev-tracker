@@ -2,7 +2,7 @@ import mimetypes
 from pathlib import Path
 
 from django.conf import settings
-from django.http import FileResponse, Http404
+from django.http import FileResponse, Http404, JsonResponse
 from django.shortcuts import render
 
 
@@ -14,6 +14,351 @@ def render_frontend_page(request, template_name: str):
     if not template_path.exists():
         raise Http404("Page not found")
     return render(request, template_name)
+
+
+def build_openapi_schema(request):
+    base_url = request.build_absolute_uri("/").rstrip("/")
+    bearer_security = [{"BearerAuth": []}]
+    return {
+        "openapi": "3.0.3",
+        "info": {
+            "title": "Dev Tracker API",
+            "version": "1.0.0",
+            "description": "Production API documentation for the Dev Tracker system.",
+        },
+        "servers": [{"url": base_url}],
+        "components": {
+            "securitySchemes": {
+                "BearerAuth": {
+                    "type": "http",
+                    "scheme": "bearer",
+                    "bearerFormat": "JWT",
+                    "description": "Paste the access token returned by /auth/login.",
+                }
+            },
+            "schemas": {
+                "LoginRequest": {
+                    "type": "object",
+                    "required": ["username", "password"],
+                    "properties": {
+                        "username": {"type": "string", "example": "admin@example.com"},
+                        "password": {"type": "string", "example": "password123"},
+                    },
+                },
+                "UserCreateRequest": {
+                    "type": "object",
+                    "required": ["name", "email", "password"],
+                    "properties": {
+                        "name": {"type": "string"},
+                        "email": {"type": "string", "format": "email"},
+                        "password": {"type": "string"},
+                    },
+                },
+                "AssignTaskRequest": {
+                    "type": "object",
+                    "required": ["title", "owner_id"],
+                    "properties": {
+                        "title": {"type": "string"},
+                        "description": {"type": "string"},
+                        "owner_id": {"type": "integer"},
+                        "estimated_hours": {"type": "number", "format": "float"},
+                        "due_date": {"type": "string", "format": "date"},
+                        "github_link": {"type": "string", "format": "uri"},
+                    },
+                },
+                "CreateJobRequest": {
+                    "type": "object",
+                    "required": ["title", "owner_id"],
+                    "properties": {
+                        "title": {"type": "string"},
+                        "description": {"type": "string"},
+                        "owner_id": {"type": "integer"},
+                        "estimated_hours": {"type": "number", "format": "float"},
+                        "due_date": {"type": "string", "format": "date"},
+                        "github_link": {"type": "string", "format": "uri"},
+                    },
+                },
+                "UpdateMessageRequest": {
+                    "type": "object",
+                    "required": ["message"],
+                    "properties": {
+                        "message": {"type": "string"},
+                    },
+                },
+            },
+        },
+        "paths": {
+            "/health": {
+                "get": {
+                    "summary": "Health check",
+                    "responses": {"200": {"description": "API is healthy"}},
+                }
+            },
+            "/auth/login": {
+                "post": {
+                    "summary": "Login",
+                    "requestBody": {
+                        "required": True,
+                        "content": {
+                            "application/json": {
+                                "schema": {"$ref": "#/components/schemas/LoginRequest"}
+                            },
+                            "application/x-www-form-urlencoded": {
+                                "schema": {"$ref": "#/components/schemas/LoginRequest"}
+                            },
+                        },
+                    },
+                    "responses": {"200": {"description": "Login successful"}},
+                }
+            },
+            "/auth/me": {
+                "get": {
+                    "summary": "Current authenticated user",
+                    "security": bearer_security,
+                    "responses": {"200": {"description": "Current user profile"}},
+                }
+            },
+            "/users/register": {
+                "post": {
+                    "summary": "Register user",
+                    "requestBody": {
+                        "required": True,
+                        "content": {
+                            "application/json": {
+                                "schema": {"$ref": "#/components/schemas/UserCreateRequest"}
+                            }
+                        },
+                    },
+                    "responses": {"201": {"description": "User created"}},
+                }
+            },
+            "/users/": {
+                "get": {
+                    "summary": "List users",
+                    "security": bearer_security,
+                    "responses": {"200": {"description": "User list"}},
+                }
+            },
+            "/users/promote/{user_id}": {
+                "put": {
+                    "summary": "Promote user to admin",
+                    "security": bearer_security,
+                    "parameters": [
+                        {
+                            "name": "user_id",
+                            "in": "path",
+                            "required": True,
+                            "schema": {"type": "integer"},
+                        }
+                    ],
+                    "responses": {"200": {"description": "User promoted"}},
+                }
+            },
+            "/users/{user_id}": {
+                "delete": {
+                    "summary": "Delete user",
+                    "description": "Admin-only endpoint to permanently delete a user.",
+                    "security": bearer_security,
+                    "parameters": [
+                        {
+                            "name": "user_id",
+                            "in": "path",
+                            "required": True,
+                            "schema": {"type": "integer"},
+                        }
+                    ],
+                    "responses": {
+                        "200": {"description": "User deleted"},
+                        "404": {"description": "User not found"},
+                    },
+                }
+            },
+            "/tasks/": {
+                "get": {
+                    "summary": "List all tasks",
+                    "security": bearer_security,
+                    "responses": {"200": {"description": "Task list"}},
+                }
+            },
+            "/tasks/my-tasks": {
+                "get": {
+                    "summary": "List current user's tasks",
+                    "security": bearer_security,
+                    "responses": {"200": {"description": "My tasks"}},
+                }
+            },
+            "/tasks/assign-task": {
+                "post": {
+                    "summary": "Assign task",
+                    "security": bearer_security,
+                    "requestBody": {
+                        "required": True,
+                        "content": {
+                            "application/json": {
+                                "schema": {"$ref": "#/components/schemas/AssignTaskRequest"}
+                            }
+                        },
+                    },
+                    "responses": {"200": {"description": "Task assigned"}},
+                }
+            },
+            "/tasks/start/{task_id}": {
+                "put": {
+                    "summary": "Start task",
+                    "security": bearer_security,
+                    "parameters": [
+                        {
+                            "name": "task_id",
+                            "in": "path",
+                            "required": True,
+                            "schema": {"type": "integer"},
+                        }
+                    ],
+                    "responses": {"200": {"description": "Task started"}},
+                }
+            },
+            "/tasks/complete/{task_id}": {
+                "put": {
+                    "summary": "Complete task",
+                    "security": bearer_security,
+                    "parameters": [
+                        {
+                            "name": "task_id",
+                            "in": "path",
+                            "required": True,
+                            "schema": {"type": "integer"},
+                        }
+                    ],
+                    "responses": {"200": {"description": "Task completed"}},
+                }
+            },
+            "/tasks/update/{task_id}": {
+                "post": {
+                    "summary": "Add task update",
+                    "security": bearer_security,
+                    "parameters": [
+                        {
+                            "name": "task_id",
+                            "in": "path",
+                            "required": True,
+                            "schema": {"type": "integer"},
+                        }
+                    ],
+                    "requestBody": {
+                        "required": True,
+                        "content": {
+                            "application/json": {
+                                "schema": {"$ref": "#/components/schemas/UpdateMessageRequest"}
+                            }
+                        },
+                    },
+                    "responses": {"200": {"description": "Task update added"}},
+                }
+            },
+            "/job-cards/": {
+                "get": {
+                    "summary": "List job cards",
+                    "security": bearer_security,
+                    "responses": {"200": {"description": "Job card list"}},
+                },
+                "post": {
+                    "summary": "Create job card",
+                    "security": bearer_security,
+                    "requestBody": {
+                        "required": True,
+                        "content": {
+                            "application/json": {
+                                "schema": {"$ref": "#/components/schemas/CreateJobRequest"}
+                            }
+                        },
+                    },
+                    "responses": {"200": {"description": "Job created"}},
+                },
+            },
+            "/job-cards/open/{job_id}": {
+                "put": {
+                    "summary": "Open job card",
+                    "security": bearer_security,
+                    "parameters": [
+                        {
+                            "name": "job_id",
+                            "in": "path",
+                            "required": True,
+                            "schema": {"type": "integer"},
+                        }
+                    ],
+                    "responses": {"200": {"description": "Job started"}},
+                }
+            },
+            "/job-cards/close/{job_id}": {
+                "put": {
+                    "summary": "Close job card",
+                    "security": bearer_security,
+                    "parameters": [
+                        {
+                            "name": "job_id",
+                            "in": "path",
+                            "required": True,
+                            "schema": {"type": "integer"},
+                        }
+                    ],
+                    "responses": {"200": {"description": "Job closed"}},
+                }
+            },
+            "/job-cards/update/{job_id}": {
+                "post": {
+                    "summary": "Add job update",
+                    "security": bearer_security,
+                    "parameters": [
+                        {
+                            "name": "job_id",
+                            "in": "path",
+                            "required": True,
+                            "schema": {"type": "integer"},
+                        }
+                    ],
+                    "requestBody": {
+                        "required": True,
+                        "content": {
+                            "application/json": {
+                                "schema": {"$ref": "#/components/schemas/UpdateMessageRequest"}
+                            }
+                        },
+                    },
+                    "responses": {"200": {"description": "Job update added"}},
+                }
+            },
+            "/analytics/dashboard": {
+                "get": {
+                    "summary": "Admin dashboard stats",
+                    "security": bearer_security,
+                    "responses": {"200": {"description": "Admin KPI summary"}},
+                }
+            },
+            "/analytics/charts": {
+                "get": {
+                    "summary": "Admin charts data",
+                    "security": bearer_security,
+                    "responses": {"200": {"description": "Admin chart data"}},
+                }
+            },
+            "/analytics/my-charts": {
+                "get": {
+                    "summary": "User chart data",
+                    "security": bearer_security,
+                    "responses": {"200": {"description": "User chart data"}},
+                }
+            },
+        },
+    }
+
+
+def openapi_schema_view(request):
+    return JsonResponse(build_openapi_schema(request))
+
+
+def swagger_ui_view(request):
+    return render(request, "swagger.html", {"schema_url": "/openapi.json"})
 
 
 def serve_frontend_asset(request, asset_path: str):

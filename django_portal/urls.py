@@ -1,10 +1,12 @@
 from django.urls import path, re_path
 
-from .views import render_frontend_page, serve_frontend_asset
+from .views import openapi_schema_view, render_frontend_page, serve_frontend_asset, swagger_ui_view
 from tracker import views as tracker_views
 
 
 urlpatterns = [
+    path("openapi.json", openapi_schema_view),
+    path("swagger/", swagger_ui_view),
     path("health", tracker_views.health_check),
     path("protected", tracker_views.protected_route),
     path("auth/login", tracker_views.login_view),
