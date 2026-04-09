@@ -2,7 +2,7 @@ import mimetypes
 from pathlib import Path
 
 from django.conf import settings
-from django.http import FileResponse, Http404, JsonResponse
+from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import render
 
 
@@ -358,7 +358,43 @@ def openapi_schema_view(request):
 
 
 def swagger_ui_view(request):
-    return render(request, "swagger.html", {"schema_url": "/openapi.json"})
+    html = """<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dev Tracker API Docs</title>
+    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css">
+    <style>
+        body { margin: 0; background: linear-gradient(180deg, #eef4ff 0%, #f8fbff 100%); font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+        .topbar { display: none; }
+        .docs-header { padding: 24px 28px 12px; color: #0f172a; }
+        .docs-header h1 { margin: 0 0 8px; font-size: 2rem; }
+        .docs-header p { margin: 0; color: #475569; }
+        #swagger-ui { margin: 0 auto 24px; max-width: 1200px; background: #fff; border: 1px solid rgba(15, 23, 42, 0.08); border-radius: 24px; box-shadow: 0 20px 60px rgba(37, 99, 235, 0.12); overflow: hidden; }
+    </style>
+</head>
+<body>
+    <div class="docs-header">
+        <h1>Dev Tracker API</h1>
+        <p>Swagger documentation for production operations, including user deletion and admin task controls.</p>
+    </div>
+    <div id="swagger-ui"></div>
+    <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+    <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-standalone-preset.js"></script>
+    <script>
+        window.ui = SwaggerUIBundle({
+            url: "/openapi.json",
+            dom_id: "#swagger-ui",
+            deepLinking: true,
+            presets: [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset],
+            layout: "StandaloneLayout",
+            persistAuthorization: true
+        });
+    </script>
+</body>
+</html>"""
+    return HttpResponse(html)
 
 
 def serve_frontend_asset(request, asset_path: str):

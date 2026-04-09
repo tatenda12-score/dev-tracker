@@ -7,6 +7,7 @@ from tracker import views as tracker_views
 urlpatterns = [
     path("openapi.json", openapi_schema_view),
     path("swagger/", swagger_ui_view),
+    path("docs/", swagger_ui_view),
     path("health", tracker_views.health_check),
     path("protected", tracker_views.protected_route),
     path("auth/login", tracker_views.login_view),
